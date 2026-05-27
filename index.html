@@ -10,106 +10,117 @@
             --drag-color: #00e5ff; --zone-color: #2962ff; --zone-light: rgba(41, 98, 255, 0.05); --zone-hover: rgba(41, 98, 255, 0.2);
             --danger-color: #e53935; --danger-light: #ffebee; --text-dark: #333333; --bg-light: #f4f6f8; --white: #ffffff; --gray-border: #e0e0e0;
         }
-        body { font-family: 'Segoe UI', AppleSDGothicNeo-Regular, sans-serif; text-align: center; background-color: var(--bg-light); margin: 0; padding: 20px; color: var(--text-dark); user-select: none; -webkit-user-select: none; }
-        header { margin-bottom: 25px; }
-        h2 { color: var(--primary-dark); margin-bottom: 5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .subtitle { color: #666; margin-top: 0; font-size: 14.5px; }
-        .guide-box { background-color: var(--white); border-left: 5px solid var(--accent-color); padding: 15px 20px; max-width: 850px; margin: 0 auto 20px auto; border-radius: 4px 12px 12px 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: left; font-size: 14px; line-height: 1.6; }
-        .control-panel { max-width: 850px; margin: 0 auto 20px auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background: var(--white); padding: 15px 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
-        .floor-btn { padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 50px; border: 2px solid #ddd; background-color: var(--white); color: #555; transition: all 0.3s ease; }
-        .floor-btn.active { background-color: var(--primary-color); border-color: var(--primary-color); color: var(--white); box-shadow: 0 4px 10px rgba(46, 125, 50, 0.2); }
-        .action-btn { padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 6px; }
-        .btn-db-save { background-color: #0288d1; color: white; }
-        .btn-db-reset { background-color: #757575; color: white; }
-        #map-wrapper { position: relative; width: 100%; max-width: 850px; margin: 0 auto; border-radius: 20px; box-shadow: 0 0 0 4px var(--white), 0 10px 30px rgba(0,0,0,0.12); overflow: hidden; background-color: #eaeaea; cursor: crosshair; touch-action: none; }
+        body { font-family: 'Segoe UI', AppleSDGothicNeo-Regular, sans-serif; text-align: center; background-color: var(--bg-light); margin: 0; padding: 12px; color: var(--text-dark); user-select: none; -webkit-user-select: none; }
+        header { margin-bottom: 15px; padding: 0 10px; }
+        h2 { color: var(--primary-dark); margin: 5px 0; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+        .subtitle { color: #666; margin-top: 2px; font-size: 13px; font-weight: 500; }
+        .guide-box { background-color: var(--white); border-left: 5px solid var(--primary-color); padding: 12px 16px; max-width: 850px; margin: 0 auto 12px auto; border-radius: 4px 10px 10px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); text-align: left; font-size: 13px; line-height: 1.6; word-break: keep-all; }
+        .guide-title { font-weight: bold; color: var(--primary-dark); display: block; margin-bottom: 5px; font-size: 14px; }
+        .control-panel { max-width: 850px; margin: 0 auto 12px auto; display: flex; flex-direction: column; gap: 10px; background: var(--white); padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+        .btn-group { display: flex; gap: 6px; justify-content: center; width: 100%; }
+        .floor-btn { flex: 1; max-width: 120px; padding: 10px 0; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 25px; border: 1.5px solid #ddd; background-color: var(--white); color: #555; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; }
+        .floor-btn.active { background-color: var(--primary-color); border-color: var(--primary-color); color: var(--white); font-weight: bold; box-shadow: 0 3px 8px rgba(46, 125, 50, 0.2); }
+        .action-btn { width: 100%; max-width: 320px; padding: 11px 0; font-size: 13px; font-weight: bold; border-radius: 25px; border: none; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px; -webkit-tap-highlight-color: transparent; }
+        .btn-db-reset { background-color: #616161; color: white; }
+        #map-wrapper { position: relative; width: 100%; max-width: 850px; margin: 0 auto; border-radius: 12px; box-shadow: 0 0 0 3px var(--white), 0 5px 20px rgba(0,0,0,0.1); overflow: hidden; background-color: #eaeaea; cursor: crosshair; touch-action: none; }
         #map-image { width: 100%; height: auto; display: block; -webkit-user-drag: none; user-select: none; }
-        .zone-highlight { position: absolute; border: 2.5px dashed rgba(41, 98, 255, 0.75); background-color: var(--zone-light); border-radius: 8px; cursor: pointer; transition: all 0.25s ease; z-index: 5; }
-        .zone-highlight.hovered, .zone-highlight:hover { border: 3px solid var(--zone-color); background-color: var(--zone-hover); box-shadow: 0 0 15px rgba(41, 98, 255, 0.5); z-index: 10; }
+        .zone-highlight { position: absolute; border: 2px dashed rgba(41, 98, 255, 0.75); background-color: var(--zone-light); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; z-index: 5; -webkit-tap-highlight-color: transparent; }
+        .zone-highlight.hovered, .zone-highlight:hover { border: 2px solid var(--zone-color); background-color: var(--zone-hover); box-shadow: 0 0 10px rgba(41, 98, 255, 0.4); z-index: 10; }
         .zone-highlight.danger-zone { border-color: rgba(229, 57, 53, 0.75); background-color: rgba(229, 57, 53, 0.03); }
-        .zone-highlight.danger-zone:hover { border-style: solid; border-color: var(--danger-color); background-color: rgba(229, 57, 53, 0.2); box-shadow: 0 0 15px rgba(229, 57, 53, 0.5); }
-        #drag-guide-box { position: absolute; border: 2.5px dashed var(--drag-color); background-color: rgba(0, 229, 255, 0.15); border-radius: 8px; display: none; z-index: 8; }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100; }
+        .zone-highlight.danger-zone:hover { border-style: solid; border-color: var(--danger-color); background-color: rgba(229, 57, 53, 0.18); box-shadow: 0 0 10px rgba(229, 57, 53, 0.4); }
+        #drag-guide-box { position: absolute; border: 2px dashed var(--drag-color); background-color: rgba(0, 229, 255, 0.15); border-radius: 6px; display: none; z-index: 8; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 15px; box-sizing: border-radius; }
         .modal-overlay.show { display: flex; }
-        .modal-content { background: var(--white); padding: 30px; border-radius: 20px; text-align: left; max-width: 480px; width: 90%; box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
-        .modal-content h3 { margin-top: 0; color: var(--primary-dark); font-size: 20px; border-bottom: 2px solid #eee; padding-bottom: 12px; }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #555; }
-        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 2px solid var(--gray-border); border-radius: 8px; box-sizing: border-box; }
-        .error-message { color: var(--danger-color); font-size: 13px; font-weight: 600; margin-top: 6px; display: none; background-color: var(--danger-light); padding: 8px 12px; border-radius: 6px; }
-        .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f8f9fa; padding: 12px; border-radius: 10px; border: 1.5px dashed #ccc; }
-        .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
-        .info-pill-container { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
-        .info-pill { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; color: white; }
+        .modal-content { background: var(--white); padding: 20px; border-radius: 16px; text-align: left; max-width: 420px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.25); box-sizing: border-box; }
+        .modal-content h3 { margin-top: 0; color: var(--primary-dark); font-size: 17px; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #555; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1.5px solid var(--gray-border); border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        .error-message { color: var(--danger-color); font-size: 12px; font-weight: 600; margin-top: 5px; display: none; background-color: var(--danger-light); padding: 6px 10px; border-radius: 6px; }
+        .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px dashed #ccc; }
+        .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; }
+        .info-pill-container { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
+        .info-pill { padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: bold; color: white; }
         .pill-general { background-color: #2e7d32; } .pill-mix { background-color: #9c27b0; } .pill-pet { background-color: #1e88e5; } .pill-paper { background-color: #ff8f00; } .pill-danger { background-color: #e53935; }
-        .modal-buttons { display: flex; gap: 10px; margin-top: 25px; }
-        .modal-btn { flex: 1; padding: 12px; font-size: 15px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; }
+        .modal-buttons { display: flex; gap: 8px; margin-top: 20px; }
+        .modal-btn { flex: 1; padding: 11px; font-size: 14px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; text-align: center; }
         .btn-cancel { background-color: #eeeeee; color: #666; } .btn-save { background-color: var(--primary-color); color: var(--white); } .btn-delete { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
-        .info-label { font-weight: 600; color: #555; display: inline-block; width: 90px; }
+        .info-label { font-weight: 600; color: #555; display: inline-block; width: 75px; font-size: 13.5px; }
+        @media (min-width: 480px) { .control-panel { flex-direction: row; justify-content: space-between; align-items: center; } .btn-group { width: auto; } .action-btn { width: auto; padding: 10px 18px; } }
     </style>
 </head>
 <body>
     <header>
-        <h2>🧹 실시간 교내 쓰레기통 참여형 지도 📍</h2>
-        <p class="subtitle">학급 특색 활동: 교내 분리수거 및 무단 투기 실태 시각화 지도</p>
+        <h2>🧹 교내 쓰레기통 참여형 지도 📍</h2>
+        <p class="subtitle">학급 특색 활동: 분리수거 및 무단 투기 실태 시각화</p>
     </header>
     <div class="guide-box">
-        🔒 <strong>영구 저장 모드 작동 중:</strong> 이제 웹 브라우저 탭을 완전히 닫거나 패드를 껐다 켜도 데이터가 사라지지 않고 영구 보존됩니다! (오직 관리자가 깃허브 서버를 Unpublish 하거나 아래 초기화 버튼을 누를 때만 리셋됩니다)
+        <span class="guide-title">💡 1초만에 마스터하는 지도 사용법!</span>
+        1. 원하는 층수 버튼을 누르고, 지도 도면 위를 <strong>손가락이나 마우스로 드래그(네모 그리기)</strong> 하세요.<br>
+        2. 등록 창이 뜨면 구체적인 <strong>장소 이름</strong>을 적고, 배치된 <strong>쓰레기통 종류</strong>를 체크해 줍니다.<br>
+        3. 저장하면 지도가 완성됩니다! (입력한 정보는 기기에 자동 저장되어 창을 닫아도 안전하게 유지됩니다)
     </div>
     <div class="control-panel">
         <div class="btn-group">
-            <button class="floor-btn active" id="btn-f1" onclick="changeFloor('1층')">1층 지도</button>
-            <button class="floor-btn" id="btn-f2" onclick="changeFloor('2층')">2층 지도</button>
-            <button class="floor-btn" id="btn-f3" onclick="changeFloor('3층')">3층 지도</button>
-            <button class="floor-btn" id="btn-f4" onclick="changeFloor('4층')">4층 지도</button>
+            <button class="floor-btn active" id="btn-f1" onclick="changeFloor('1층')">1층</button>
+            <button class="floor-btn" id="btn-f2" onclick="changeFloor('2층')">2층</button>
+            <button class="floor-btn" id="btn-f3" onclick="changeFloor('3층')">3층</button>
+            <button class="floor-btn" id="btn-f4" onclick="changeFloor('4층')">4층</button>
         </div>
         <div class="btn-group">
-            <button class="action-btn btn-db-reset" onclick="resetLocalStorage()">🔄 지도 전체 초기화</button>
+            <button class="action-btn btn-db-reset" onclick="resetLocalStorageSecurely()">🔄 지도 전체 초기화</button>
         </div>
     </div>
     <div id="map-wrapper">
-        <img id="map-image" src="floor1.jpg" alt="학교 평면도" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'450\' style=\'background:%23eaeaea;\'><text x=\'50%\' y=\'50%\' font-size=\'18\' fill=\'%23666\' text-anchor=\'middle\'>[이미지 로딩 중...] 잠시만 기다리시거나 파일명을 확인해 주세요.</text></svg>'">
+        <img id="map-image" src="floor1.jpg" alt="학교 평면도" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'450\' style=\'background:%23eaeaea;\'><text x=\'50%\' y=\'50%\' font-size=\'15\' fill=\'%23666\' text-anchor=\'middle\'>[도면 로딩 중...] 파일명(floor1.jpg 등)을 확인해 주세요.</text></svg>'">
         <div id="drag-guide-box"></div>
         <div id="marker-container"></div>
     </div>
     <div id="add-modal" class="modal-overlay" onclick="closeAddModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3>📍 새 쓰레기 수거 구역 등록</h3>
-            <div class="form-group"><label for="input-location">구체적인 장소 이름</label><input type="text" id="input-location" placeholder="예: 2층 복도 무용실 앞"></div>
+            <div class="form-group"><label for="input-location">장소 이름</label><input type="text" id="input-location" placeholder="예: 2층 무용실 앞 복도"></div>
             <div class="form-group">
                 <label>배치된 쓰레기통 목록</label>
                 <div class="checkbox-grid">
-                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="일반 쓰레기통"> 일반 쓰레기통</label>
+                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="일반 쓰레기통"> 일반 쓰레기</label>
                     <label class="checkbox-item"><input type="checkbox" name="bin-types" value="재활용 분리수거함 (혼합)"> 혼합 분리함</label>
-                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="페트병 / 캔 전용함"> 페트병 / 캔함</label>
+                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="페트병 / 캔 전용함"> 페트 / 캔함</label>
                     <label class="checkbox-item"><input type="checkbox" name="bin-types" value="종이 수거 전용 상자"> 종이 수거함</label>
                     <label class="checkbox-item" style="grid-column: span 2; color: var(--danger-color); font-weight: bold;"><input type="checkbox" name="bin-types" value="쓰레기 무단 방치 구역 (경고)"> ⚠️ 무단 방치 구역 (경고)</label>
                 </div>
             </div>
-            <div class="form-group"><label for="input-desc">현황 기록 메모</label><textarea id="input-desc" rows="2" placeholder="세부 메모를 기입하세요."></textarea></div>
+            <div class="form-group"><label for="input-desc">현황 기록 메모</label><textarea id="input-desc" rows="2" placeholder="세부 특징을 적어주세요."></textarea></div>
             <div id="add-error-msg" class="error-message"></div>
-            <div class="modal-buttons"><button class="modal-btn btn-cancel" onclick="closeAddModal()">취소</button><button class="modal-btn btn-save" onclick="saveNewMarker()">구역 영구 저장</button></div>
+            <div class="modal-buttons"><button class="modal-btn btn-cancel" onclick="closeAddModal()">취소</button><button class="modal-btn btn-save" onclick="saveNewMarker()">구역 저장</button></div>
         </div>
     </div>
     <div id="view-modal" class="modal-overlay" onclick="closeViewModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 id="view-title">배치 현황 리포트</h3>
-            <div style="font-size: 14.5px; line-height: 1.7;">
+            <div style="font-size: 13.5px; line-height: 1.6;">
                 <p><span class="info-label">📍 위치:</span> <span id="view-location" style="font-weight: bold;"></span></p>
                 <p style="margin-bottom: 2px;"><span class="info-label">🗑️ 종류:</span></p>
                 <div id="view-pills" class="info-pill-container"></div>
-                <p><span class="info-label">📋 보고메모:</span> <span id="view-desc"></span></p>
+                <p><span class="info-label">📋 보고메모:</span> <span id="view-desc" style="color:#555;"></span></p>
             </div>
-            <div class="modal-buttons"><button class="modal-btn btn-delete" id="delete-btn">해당 구역 삭제</button><button class="modal-btn btn-cancel" onclick="closeViewModal()" style="background: var(--primary-color); color: white;">닫기</button></div>
+            <div class="modal-buttons"><button class="modal-btn btn-delete" id="delete-btn">이 구역 삭제</button><button class="modal-btn btn-cancel" onclick="closeViewModal()" style="background: var(--primary-color); color: white;">닫기</button></div>
         </div>
     </div>
     <script>
         let currentFloor = "1층", currentSelectedMarkerId = null, isDragging = false;
         let dragStartCoords = { x: 0, y: 0 }, dragEndCoords = { x: 0, y: 0 }, activeSavedCoords = { x: 0, y: 0, width: 0, height: 0 }, trashBins = [];
+        const ADMIN_PASSWORD = "1234"; // 🔒 관리자용 비밀번호
         window.onload = function() { initInteractionEvents(); loadFromLocalStorage(); }
         function autoSaveToLocalStorage() { localStorage.setItem('school_trash_data_permanent', JSON.stringify(trashBins)); }
         function loadFromLocalStorage() { const savedData = localStorage.getItem('school_trash_data_permanent'); if (savedData) { trashBins = JSON.parse(savedData); renderMarkers(); } }
-        function resetLocalStorage() { if (confirm("지도의 모든 마킹 내역을 완전히 초기화하시겠습니까?")) { localStorage.removeItem('school_trash_data_permanent'); trashBins = []; renderMarkers(); alert("리셋되었습니다."); } }
+        function resetLocalStorageSecurely() {
+            const inputPw = prompt("🔒 전체 초기화 보안 잠금\n관리자 비밀번호를 입력해야 모든 데이터가 리셋됩니다:");
+            if (inputPw === null) return;
+            if (inputPw === ADMIN_PASSWORD) {
+                if (confirm("정말로 모든 층의 마킹 내역을 초기화하시겠습니까?")) { localStorage.removeItem('school_trash_data_permanent'); trashBins = []; renderMarkers(); alert("모든 데이터가 깨끗하게 리셋되었습니다."); }
+            } else { alert("❌ 비밀번호가 틀렸습니다. 관리자만 초기화할 수 있습니다."); }
+        }
         function changeFloor(floor) {
             currentFloor = floor; document.getElementById('btn-f1').classList.remove('active'); document.getElementById('btn-f2').classList.remove('active'); document.getElementById('btn-f3').classList.remove('active'); document.getElementById('btn-f4').classList.remove('active');
             const mapImage = document.getElementById('map-image');
@@ -167,7 +178,7 @@
         function closeAddModal() { document.getElementById('add-modal').classList.remove('show'); }
         function saveNewMarker() {
             const loc = document.getElementById('input-location').value.trim(), desc = document.getElementById('input-desc').value.trim(), checked = document.querySelectorAll('input[name="bin-types"]:checked'), types = Array.from(checked).map(cb => cb.value);
-            if (!loc || types.length === 0) { const err = document.getElementById('add-error-msg'); err.innerText = "이름과 쓰레기통 종류를 입력하세요."; err.style.display = 'block'; return; }
+            if (!loc || types.length === 0) { const err = document.getElementById('add-error-msg'); err.innerText = "이름과 종류를 입력하세요."; err.style.display = 'block'; return; }
             trashBins.push({ id: Date.now(), floorName: currentFloor, x: activeSavedCoords.x, y: activeSavedCoords.y, width: activeSavedCoords.width, height: activeSavedCoords.height, location: loc, types: types, desc: desc || "세부 기록 없음." });
             closeAddModal(); autoSaveToLocalStorage(); renderMarkers();
         }
