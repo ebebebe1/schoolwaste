@@ -38,10 +38,11 @@
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1.5px solid var(--gray-border); border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         .error-message { color: var(--danger-color); font-size: 12px; font-weight: 600; margin-top: 5px; display: none; background-color: var(--danger-light); padding: 6px 10px; border-radius: 6px; }
         
-        .checkbox-grid { display: grid; grid-template-columns: 1fr; gap: 8px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px dashed #ccc; }
-        .checkbox-item { display: flex; align-items: center; justify-content: flex-start; gap: 8px; font-size: 13px; cursor: pointer; padding: 4px 0; width: 100%; box-sizing: border-box; }
-        .checkbox-item input[type="checkbox"] { width: 16px; height: 16px; margin: 0; flex-shrink: 0; cursor: pointer; }
-        .checkbox-item span { line-height: 16px; display: inline-block; }
+        /* 🛠️ 정렬 레이아웃 전면 리팩토링 */
+        .checkbox-grid { display: flex; flex-direction: column; gap: 10px; background: #f8f9fa; padding: 14px; border-radius: 8px; border: 1px dashed #ccc; box-sizing: border-box; }
+        .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 13.5px; cursor: pointer; user-select: none; width: 100%; box-sizing: border-box; }
+        .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; margin: 0; padding: 0; flex-shrink: 0; cursor: pointer; }
+        .checkbox-item span { line-height: 18px; font-weight: 500; color: #333; }
 
         .info-pill-container { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
         .info-pill { padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: bold; color: white; }
@@ -51,17 +52,18 @@
         .btn-cancel { background-color: #eeeeee; color: #666; } .btn-save { background-color: var(--primary-color); color: var(--white); } .btn-delete { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
         .info-label { font-weight: 600; color: #555; display: inline-block; width: 75px; font-size: 13.5px; }
 
-        @media (min-width: 480px) {
+        /* 📱 반응형 분기 조정 */
+        @media (min-width: 520px) {
             body { padding: 20px; }
             h2 { font-size: 24px; }
             .control-panel { flex-direction: row; justify-content: space-between; align-items: center; padding: 15px; }
             .btn-group { width: auto; }
             .action-btn { width: auto; padding: 10px 20px; }
-            .checkbox-grid { grid-template-columns: 1fr 1fr; gap: 10px 15px; }
+            .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+            .checkbox-item.full-width { grid-column: span 2; }
         }
         @media (min-width: 850px) {
             .modal-content { padding: 25px; max-width: 500px; }
-            .checkbox-grid { gap: 12px 20px; }
         }
     </style>
 </head>
@@ -103,7 +105,7 @@
                     <label class="checkbox-item"><input type="checkbox" name="bin-types" value="재활용 분리수거함 (혼합)"><span>혼합 분리함</span></label>
                     <label class="checkbox-item"><input type="checkbox" name="bin-types" value="페트병 / 캔 전용함"><span>페트 / 캔함</span></label>
                     <label class="checkbox-item"><input type="checkbox" name="bin-types" value="종이 수거 전용 상자"><span>종이 수거함</span></label>
-                    <label class="checkbox-item" style="grid-column: span 1; color: var(--danger-color); font-weight: bold;"><input type="checkbox" name="bin-types" value="쓰레기 무단 방치 구역 (경고)"><span>⚠️ 무단 방치 구역 (경고)</span></label>
+                    <label class="checkbox-item full-width" style="color: var(--danger-color); font-weight: bold;"><input type="checkbox" name="bin-types" value="쓰레기 무단 방치 구역 (경고)"><span>⚠️ 무단 방치 구역 (경고)</span></label>
                 </div>
             </div>
             <div class="form-group"><label for="input-desc">현황 기록 메모</label><textarea id="input-desc" rows="2" placeholder="세부 특징을 적어주세요."></textarea></div>
@@ -170,7 +172,7 @@
             if (target.closest('.zone-highlight')) return; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
             isDragging = true; dragStartCoords.x = clientX - rect.left; dragStartCoords.y = clientY - rect.top;
             dragEndCoords.x = dragStartCoords.x; dragEndCoords.y = dragStartCoords.y;
-            const guide = document.getElementById('drag-guide-box'); guide.style.left = dragStartCoords.x + "px"; guide.style.top = varY = dragStartCoords.y + "px"; guide.style.width = "0px"; guide.style.height = "0px"; guide.style.display = "block";
+            const guide = document.getElementById('drag-guide-box'); guide.style.left = dragStartCoords.x + "px"; guide.style.top = dragStartCoords.y + "px"; guide.style.width = "0px"; guide.style.height = "0px"; guide.style.display = "block";
         }
         function handleDragMove(clientX, clientY) {
             if (!isDragging) return; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
