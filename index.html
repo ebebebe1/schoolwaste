@@ -8,7 +8,7 @@
         :root {
             --primary-color: #2e7d32; --primary-light: #e8f5e9; --primary-dark: #1b5e20; --accent-color: #ff9100;
             --drag-color: #00e5ff; --zone-color: #2962ff; --zone-light: rgba(41, 98, 255, 0.05); --zone-hover: rgba(41, 98, 255, 0.2);
-            --danger-color: #e53935; --danger-light: #ffebee; --text-dark: #333333; --bg-light: #f4f6f8; --white: #ffffff; --gray-border: #e0e0e0;
+            --danger-color: #e53935; --danger-light: #ffebee; --text-dark: #333333; --bg-light: #f4f6f8; --white: #ffffff; --gray-border: #cccccc;
         }
         body { font-family: 'Segoe UI', AppleSDGothicNeo-Regular, sans-serif; text-align: center; background-color: var(--bg-light); margin: 0; padding: 12px; color: var(--text-dark); user-select: none; -webkit-user-select: none; }
         header { margin-bottom: 15px; padding: 0 10px; }
@@ -29,16 +29,21 @@
         .zone-highlight.danger-zone { border-color: rgba(229, 57, 53, 0.75); background-color: rgba(229, 57, 53, 0.03); }
         .zone-highlight.danger-zone:hover { border-style: solid; border-color: var(--danger-color); background-color: rgba(229, 57, 53, 0.18); box-shadow: 0 0 10px rgba(229, 57, 53, 0.4); }
         #drag-guide-box { position: absolute; border: 2px dashed var(--drag-color); background-color: rgba(0, 229, 255, 0.15); border-radius: 6px; display: none; z-index: 8; }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 15px; box-sizing: border-radius; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 15px; box-sizing: border-box; }
         .modal-overlay.show { display: flex; }
-        .modal-content { background: var(--white); padding: 20px; border-radius: 16px; text-align: left; max-width: 420px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.25); box-sizing: border-box; }
+        .modal-content { background: var(--white); padding: 20px; border-radius: 16px; text-align: left; max-width: 460px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.25); box-sizing: border-box; }
         .modal-content h3 { margin-top: 0; color: var(--primary-dark); font-size: 17px; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
         .form-group { margin-bottom: 14px; }
         .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #555; }
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1.5px solid var(--gray-border); border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         .error-message { color: var(--danger-color); font-size: 12px; font-weight: 600; margin-top: 5px; display: none; background-color: var(--danger-light); padding: 6px 10px; border-radius: 6px; }
-        .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px dashed #ccc; }
-        .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; }
+        
+        /* 🛠️ 체크박스 정렬 틀어짐 방지 핵심 코드 */
+        .checkbox-grid { display: grid; grid-template-columns: 1fr; gap: 8px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px dashed #ccc; }
+        .checkbox-item { display: flex; align-items: center; justify-content: flex-start; gap: 8px; font-size: 13px; cursor: pointer; padding: 4px 0; width: 100%; box-sizing: border-box; }
+        .checkbox-item input[type="checkbox"] { width: 16px; height: 16px; margin: 0; flex-shrink: 0; cursor: pointer; }
+        .checkbox-item span { line-height: 16px; display: inline-block; }
+
         .info-pill-container { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
         .info-pill { padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: bold; color: white; }
         .pill-general { background-color: #2e7d32; } .pill-mix { background-color: #9c27b0; } .pill-pet { background-color: #1e88e5; } .pill-paper { background-color: #ff8f00; } .pill-danger { background-color: #e53935; }
@@ -46,7 +51,20 @@
         .modal-btn { flex: 1; padding: 11px; font-size: 14px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; text-align: center; }
         .btn-cancel { background-color: #eeeeee; color: #666; } .btn-save { background-color: var(--primary-color); color: var(--white); } .btn-delete { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
         .info-label { font-weight: 600; color: #555; display: inline-block; width: 75px; font-size: 13.5px; }
-        @media (min-width: 480px) { .control-panel { flex-direction: row; justify-content: space-between; align-items: center; } .btn-group { width: auto; } .action-btn { width: auto; padding: 10px 18px; } }
+
+        /* 📱 디바이스별 화면 대응 레이아웃 (Media Queries) */
+        @media (min-width: 480px) { /* 태블릿 규격 */
+            body { padding: 20px; }
+            h2 { font-size: 24px; }
+            .control-panel { flex-direction: row; justify-content: space-between; align-items: center; padding: 15px; }
+            .btn-group { width: auto; }
+            .action-btn { width: auto; padding: 10px 20px; }
+            .checkbox-grid { grid-template-columns: 1fr 1fr; gap: 10px 15px; } /* 태블릿 이상에선 2열 배치 */
+        }
+        @media (min-width: 850px) { /* PC 대화면 규격 */
+            .modal-content { padding: 25px; max-width: 500px; }
+            .checkbox-grid { gap: 12px 20px; }
+        }
     </style>
 </head>
 <body>
@@ -83,11 +101,11 @@
             <div class="form-group">
                 <label>배치된 쓰레기통 목록</label>
                 <div class="checkbox-grid">
-                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="일반 쓰레기통"> 일반 쓰레기</label>
-                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="재활용 분리수거함 (혼합)"> 혼합 분리함</label>
-                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="페트병 / 캔 전용함"> 페트 / 캔함</label>
-                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="종이 수거 전용 상자"> 종이 수거함</label>
-                    <label class="checkbox-item" style="grid-column: span 2; color: var(--danger-color); font-weight: bold;"><input type="checkbox" name="bin-types" value="쓰레기 무단 방치 구역 (경고)"> ⚠️ 무단 방치 구역 (경고)</label>
+                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="일반 쓰레기통"><span>일반 쓰레기</span></label>
+                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="재활용 분리수거함 (혼합)"><span>혼합 분리함</span></label>
+                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="페트병 / 캔 전용함"><span>페트 / 캔함</span</label>
+                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="종이 수거 전용 상자"><span>종이 수거함</span></label>
+                    <label class="checkbox-item" style="grid-column: span 1; color: var(--danger-color); font-weight: bold;"><input type="checkbox" name="bin-types" value="쓰레기 무단 방치 구역 (경고)"><span>⚠️ 무단 방치 구역 (경고)</span></label>
                 </div>
             </div>
             <div class="form-group"><label for="input-desc">현황 기록 메모</label><textarea id="input-desc" rows="2" placeholder="세부 특징을 적어주세요."></textarea></div>
@@ -110,7 +128,7 @@
     <script>
         let currentFloor = "1층", currentSelectedMarkerId = null, isDragging = false;
         let dragStartCoords = { x: 0, y: 0 }, dragEndCoords = { x: 0, y: 0 }, activeSavedCoords = { x: 0, y: 0, width: 0, height: 0 }, trashBins = [];
-        const ADMIN_PASSWORD = "1234"; // 🔒 관리자용 비밀번호
+        const ADMIN_PASSWORD = "1234";
         window.onload = function() { initInteractionEvents(); loadFromLocalStorage(); }
         function autoSaveToLocalStorage() { localStorage.setItem('school_trash_data_permanent', JSON.stringify(trashBins)); }
         function loadFromLocalStorage() { const savedData = localStorage.getItem('school_trash_data_permanent'); if (savedData) { trashBins = JSON.parse(savedData); renderMarkers(); } }
