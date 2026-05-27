@@ -38,7 +38,6 @@
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1.5px solid var(--gray-border); border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         .error-message { color: var(--danger-color); font-size: 12px; font-weight: 600; margin-top: 5px; display: none; background-color: var(--danger-light); padding: 6px 10px; border-radius: 6px; }
         
-        /* 🛠️ 체크박스 정렬 틀어짐 방지 핵심 코드 */
         .checkbox-grid { display: grid; grid-template-columns: 1fr; gap: 8px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px dashed #ccc; }
         .checkbox-item { display: flex; align-items: center; justify-content: flex-start; gap: 8px; font-size: 13px; cursor: pointer; padding: 4px 0; width: 100%; box-sizing: border-box; }
         .checkbox-item input[type="checkbox"] { width: 16px; height: 16px; margin: 0; flex-shrink: 0; cursor: pointer; }
@@ -52,16 +51,15 @@
         .btn-cancel { background-color: #eeeeee; color: #666; } .btn-save { background-color: var(--primary-color); color: var(--white); } .btn-delete { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
         .info-label { font-weight: 600; color: #555; display: inline-block; width: 75px; font-size: 13.5px; }
 
-        /* 📱 디바이스별 화면 대응 레이아웃 (Media Queries) */
-        @media (min-width: 480px) { /* 태블릿 규격 */
+        @media (min-width: 480px) {
             body { padding: 20px; }
             h2 { font-size: 24px; }
             .control-panel { flex-direction: row; justify-content: space-between; align-items: center; padding: 15px; }
             .btn-group { width: auto; }
             .action-btn { width: auto; padding: 10px 20px; }
-            .checkbox-grid { grid-template-columns: 1fr 1fr; gap: 10px 15px; } /* 태블릿 이상에선 2열 배치 */
+            .checkbox-grid { grid-template-columns: 1fr 1fr; gap: 10px 15px; }
         }
-        @media (min-width: 850px) { /* PC 대화면 규격 */
+        @media (min-width: 850px) {
             .modal-content { padding: 25px; max-width: 500px; }
             .checkbox-grid { gap: 12px 20px; }
         }
@@ -103,7 +101,7 @@
                 <div class="checkbox-grid">
                     <label class="checkbox-item"><input type="checkbox" name="bin-types" value="일반 쓰레기통"><span>일반 쓰레기</span></label>
                     <label class="checkbox-item"><input type="checkbox" name="bin-types" value="재활용 분리수거함 (혼합)"><span>혼합 분리함</span></label>
-                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="페트병 / 캔 전용함"><span>페트 / 캔함</span</label>
+                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="페트병 / 캔 전용함"><span>페트 / 캔함</span></label>
                     <label class="checkbox-item"><input type="checkbox" name="bin-types" value="종이 수거 전용 상자"><span>종이 수거함</span></label>
                     <label class="checkbox-item" style="grid-column: span 1; color: var(--danger-color); font-weight: bold;"><input type="checkbox" name="bin-types" value="쓰레기 무단 방치 구역 (경고)"><span>⚠️ 무단 방치 구역 (경고)</span></label>
                 </div>
@@ -172,7 +170,7 @@
             if (target.closest('.zone-highlight')) return; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
             isDragging = true; dragStartCoords.x = clientX - rect.left; dragStartCoords.y = clientY - rect.top;
             dragEndCoords.x = dragStartCoords.x; dragEndCoords.y = dragStartCoords.y;
-            const guide = document.getElementById('drag-guide-box'); guide.style.left = dragStartCoords.x + "px"; guide.style.top = dragStartCoords.y + "px"; guide.style.width = "0px"; guide.style.height = "0px"; guide.style.display = "block";
+            const guide = document.getElementById('drag-guide-box'); guide.style.left = dragStartCoords.x + "px"; guide.style.top = varY = dragStartCoords.y + "px"; guide.style.width = "0px"; guide.style.height = "0px"; guide.style.display = "block";
         }
         function handleDragMove(clientX, clientY) {
             if (!isDragging) return; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
