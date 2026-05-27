@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>우리 학교 쓰레기통 동적 지도 서비스</title>
     <style>
-        /* 현대적이고 깔끔한 UI 시스템 정의 */
+        /* 깔끔한 UI 시스템 정의 */
         :root {
             --primary-color: #2e7d32;
             --primary-light: #e8f5e9;
             --primary-dark: #1b5e20;
             --accent-color: #ff9100;
-            --drag-color: #00e5ff; /* 고대비 네온 스카이 블루 */
-            --zone-color: #2962ff; /* 검은 도면 선 위에서도 매우 잘 보이는 고대비 일렉트릭 블루 */
+            --drag-color: #00e5ff; 
+            --zone-color: #2962ff; 
             --zone-light: rgba(41, 98, 255, 0.05);
             --zone-hover: rgba(41, 98, 255, 0.2);
             --danger-color: #e53935;
@@ -30,7 +30,7 @@
             margin: 0;
             padding: 20px;
             color: var(--text-dark);
-            user-select: none; /* 텍스트 및 이미지 드래그 방지 */
+            user-select: none; 
             -webkit-user-select: none;
         }
 
@@ -54,7 +54,6 @@
             font-size: 14.5px;
         }
 
-        /* 상세 사용방법 가이드 */
         .guide-box {
             background-color: var(--white);
             border-left: 5px solid var(--accent-color);
@@ -72,18 +71,30 @@
             color: var(--accent-color);
         }
 
-        .btn-group {
-            margin-bottom: 25px;
+        /* 컨트롤 패널 그룹 */
+        .control-panel {
+            max-width: 850px;
+            margin: 0 auto 20px auto;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
+            background: var(--white);
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
         }
 
-        /* 층수 전환 버튼 */
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
         .floor-btn {
-            padding: 12px 28px;
-            font-size: 15px;
+            padding: 10px 22px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             border-radius: 50px;
@@ -91,24 +102,41 @@
             background-color: var(--white);
             color: #555;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            min-width: 100px;
-        }
-
-        .floor-btn:hover {
-            border-color: var(--primary-color);
-            background-color: var(--primary-light);
-            color: var(--primary-color);
         }
 
         .floor-btn.active {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
             color: var(--white);
-            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+            box-shadow: 0 4px 10px rgba(46, 125, 50, 0.2);
         }
 
-        /* 지도 영역 컨테이너 */
+        /* 임시 저장 및 리셋 액션 버튼 */
+        .action-btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-db-save {
+            background-color: #0288d1;
+            color: white;
+        }
+        .btn-db-save:hover { background-color: #01579b; }
+
+        .btn-db-reset {
+            background-color: #757575;
+            color: white;
+        }
+        .btn-db-reset:hover { background-color: #424242; }
+
         #map-wrapper {
             position: relative;
             width: 100%;
@@ -119,7 +147,7 @@
             overflow: hidden;
             background-color: #eaeaea;
             cursor: crosshair; 
-            touch-action: none; /* 패드 스크롤 무시하고 드래그에 집중 */
+            touch-action: none; 
         }
 
         #map-image {
@@ -128,10 +156,8 @@
             display: block;
             -webkit-user-drag: none;
             user-select: none;
-            -webkit-user-select: none;
         }
 
-        /* 동적 구역 하이라이트 박스 */
         .zone-highlight {
             position: absolute;
             border: 2.5px dashed rgba(41, 98, 255, 0.75);
@@ -140,7 +166,6 @@
             cursor: pointer;
             transition: all 0.25s ease;
             z-index: 5;
-            pointer-events: auto;
         }
 
         .zone-highlight.hovered, .zone-highlight:hover {
@@ -160,42 +185,30 @@
             border-color: var(--danger-color);
             background-color: rgba(229, 57, 53, 0.2);
             box-shadow: 0 0 15px rgba(229, 57, 53, 0.5);
-            z-index: 10;
         }
 
-        /* 실시간 드래그 가이드 박스 */
         #drag-guide-box {
             position: absolute;
             border: 2.5px dashed var(--drag-color);
             background-color: rgba(0, 229, 255, 0.15);
-            box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
             border-radius: 8px;
             display: none;
             z-index: 8;
-            pointer-events: none;
         }
 
-        /* 모달 팝업 오버레이 */
+        /* 모달 시스템 */
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 100;
-            opacity: 0;
-            transition: opacity 0.25s ease;
         }
 
-        .modal-overlay.show {
-            display: flex;
-            opacity: 1;
-        }
+        .modal-overlay.show { display: flex; }
 
         .modal-content {
             background: var(--white);
@@ -205,12 +218,6 @@
             max-width: 480px;
             width: 90%;
             box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-            transform: translateY(-20px);
-            transition: transform 0.25s ease;
-        }
-
-        .modal-overlay.show .modal-content {
-            transform: translateY(0);
         }
 
         .modal-content h3 {
@@ -219,14 +226,9 @@
             font-size: 20px;
             border-bottom: 2px solid #eee;
             padding-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
-        .form-group {
-            margin-bottom: 18px;
-        }
+        .form-group { margin-bottom: 18px; }
 
         .form-group label {
             display: block;
@@ -242,14 +244,6 @@
             border: 2px solid var(--gray-border);
             border-radius: 8px;
             box-sizing: border-box;
-            font-family: inherit;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-
-        .form-group input:focus, .form-group textarea:focus {
-            border-color: var(--primary-color);
-            outline: none;
         }
 
         .error-message {
@@ -261,7 +255,6 @@
             background-color: var(--danger-light);
             padding: 8px 12px;
             border-radius: 6px;
-            border: 1px solid #ffcdd2;
         }
 
         .checkbox-grid {
@@ -278,24 +271,14 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            cursor: pointer;
             font-size: 13.5px;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .checkbox-item input {
-            width: auto;
-            margin: 0;
-            cursor: pointer;
         }
 
         .info-pill-container {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            margin-top: 5px;
-            margin-bottom: 15px;
+            margin: 10px 0;
         }
 
         .info-pill {
@@ -312,61 +295,18 @@
         .pill-paper { background-color: #ff8f00; }
         .pill-danger { background-color: #e53935; }
 
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 25px;
-        }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 25px; }
 
         .modal-btn {
-            flex: 1;
-            padding: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s;
+            flex: 1; padding: 12px; font-size: 15px; font-weight: 600;
+            border: none; border-radius: 8px; cursor: pointer;
         }
 
-        .btn-cancel {
-            background-color: #eeeeee;
-            color: #666;
-        }
+        .btn-cancel { background-color: #eeeeee; color: #666; }
+        .btn-save { background-color: var(--primary-color); color: var(--white); }
+        .btn-delete { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
 
-        .btn-cancel:hover {
-            background-color: #e0e0e0;
-        }
-
-        .btn-save {
-            background-color: var(--primary-color);
-            color: var(--white);
-        }
-
-        .btn-save:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .btn-delete {
-            background-color: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
-        }
-
-        .btn-delete:hover {
-            background-color: #ffcdd2;
-        }
-
-        .info-label {
-            font-weight: 600;
-            color: #555;
-            display: inline-block;
-            width: 90px;
-        }
-
-        .info-value {
-            color: #222;
-        }
+        .info-label { font-weight: 600; color: #555; display: inline-block; width: 90px; }
     </style>
 </head>
 <body>
@@ -377,82 +317,71 @@
     </header>
 
     <div class="guide-box">
-        💡 <strong>영역 지정 안내 (PC 마우스 및 패드 손가락 겸용):</strong><br>
-        1. <strong>PC라면 마우스 드래그, 패드(태블릿)라면 손가락으로 지도를 누르고 대각선으로 문질러 보세요!</strong><br>
-        2. 손을 대고 움직이는 만큼 야광 하늘색 점선 사각형 구역이 정밀하게 확장됩니다.<br>
-        3. 손을 떼는 순간 좌표를 계산해 정보 등록창이 활성화되며, 등록 후 일렉트릭 블루 테두리로 고정됩니다.
+        💾 <strong>상태 보존 기능 탑재:</strong> 구역을 그리고 정보를 기입한 뒤 우측의 <strong>[💾 브라우저 임시 저장]</strong>을 누르면, 패드가 잠기거나 다른 사이트에 갔다 와도 데이터가 그대로 복원됩니다. 단, 탭을 아예 닫거나 새로고침하면 요구하신 대로 리셋됩니다.
     </div>
 
-    <div class="btn-group">
-        <button class="floor-btn active" id="btn-f1" onclick="changeFloor('1층')">1층 지도</button>
-        <button class="floor-btn" id="btn-f2" onclick="changeFloor('2층')">2층 지도</button>
-        <button class="floor-btn" id="btn-f3" onclick="changeFloor('3층')">3층 지도</button>
-        <button class="floor-btn" id="btn-f4" onclick="changeFloor('4층')">4층 지도</button>
+    <div class="control-panel">
+        <div class="btn-group">
+            <button class="floor-btn active" id="btn-f1" onclick="changeFloor('1층')">1층 지도</button>
+            <button class="floor-btn" id="btn-f2" onclick="changeFloor('2층')">2층 지도</button>
+            <button class="floor-btn" id="btn-f3" onclick="changeFloor('3층')">3층 지도</button>
+            <button class="floor-btn" id="btn-f4" onclick="changeFloor('4층')">4층 지도</button>
+        </div>
+        <div class="btn-group">
+            <button class="action-btn btn-db-save" onclick="saveToSessionStorage()">💾 브라우저 임시 저장</button>
+            <button class="action-btn btn-db-reset" onclick="resetSessionStorage()">🔄 지도 전체 초기화</button>
+        </div>
     </div>
 
     <div id="map-wrapper">
-        <img id="map-image" src="floor1.jpg" alt="학교 평면도 배경" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'450\' style=\'background:%23eaeaea;\'><text x=\'50%\' y=\'50%\' font-size=\'18\' fill=\'%23666\' text-anchor=\'middle\' dy=\'.3em\'>[floor1.jpg 파일을 업로드해주세요] 여기에 학교 지도가 뜹니다.</text></svg>'">
+        <img id="map-image" src="floor1.jpg" alt="학교 평면도 배경" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'450\' style=\'background:%23eaeaea;\'><text x=\'50%\' y=\'50%\' font-size=\'18\' fill=\'%23666\' text-anchor=\'middle\' dy=\'.3em\'>[floor1.jpg 파일 누락] 평면도 이미지를 업로드해 주세요.</text></svg>'">
         <div id="drag-guide-box"></div>
         <div id="marker-container"></div>
     </div>
 
     <div id="add-modal" class="modal-overlay" onclick="closeAddModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3>
-                <svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#2e7d32"/></svg>
-                새 쓰레기 수거 구역 등록
-            </h3>
+            <h3>📍 새 쓰레기 수거 구역 등록</h3>
             <div class="form-group">
                 <label for="input-location">구체적인 장소 이름</label>
-                <input type="text" id="input-location" placeholder="예: 2층 본관 무용실 앞 복도" required>
+                <input type="text" id="input-location" placeholder="예: 2층 복도 무용실 앞">
             </div>
             <div class="form-group">
-                <label>이 구역에 배치된 쓰레기통 목록 (다중 선택)</label>
+                <label>배치된 쓰레기통 목록</label>
                 <div class="checkbox-grid">
-                    <label class="checkbox-item">
-                        <input type="checkbox" name="bin-types" value="일반 쓰레기통"> 일반 쓰레기통
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" name="bin-types" value="재활용 분리수거함 (혼합)"> 혼합 분리함
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" name="bin-types" value="페트병 / 캔 전용함"> 페트병 / 캔 전용함
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" name="bin-types" value="종이 수거 전용 상자"> 종이 수거 박스
-                    </label>
+                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="일반 쓰레기통"> 일반 쓰레기통</label>
+                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="재활용 분리수거함 (혼합)"> 혼합 분리함</label>
+                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="페트병 / 캔 전용함"> 페트병 / 캔함</label>
+                    <label class="checkbox-item"><input type="checkbox" name="bin-types" value="종이 수거 전용 상자"> 종이 수거함</label>
                     <label class="checkbox-item" style="grid-column: span 2; color: var(--danger-color); font-weight: bold;">
-                        <input type="checkbox" name="bin-types" value="쓰레기 무단 방치 구역 (경고)"> ⚠️ 쓰레기 무단 방치 구역 (경고)
+                        <input type="checkbox" name="bin-types" value="쓰레기 무단 방치 구역 (경고)"> ⚠️ 무단 방치 구역 (경고)
                     </label>
                 </div>
             </div>
-
             <div class="form-group">
-                <label for="input-desc">현황 기록 및 세부 메모</label>
-                <textarea id="input-desc" rows="3" placeholder="예: 무단투기가 자주 일어나 드래그 영역을 넓게 잡았습니다."></textarea>
+                <label for="input-desc">현황 기록 메모</label>
+                <textarea id="input-desc" rows="2" placeholder="세부 메모를 기입하세요."></textarea>
             </div>
-
             <div id="add-error-msg" class="error-message"></div>
-
             <div class="modal-buttons">
-                <button class="modal-btn btn-cancel" onclick="closeAddModal()">등록 취소</button>
-                <button class="modal-btn btn-save" onclick="saveNewMarker()">현재 지정 구역 저장</button>
+                <button class="modal-btn btn-cancel" onclick="closeAddModal()">취소</button>
+                <button class="modal-btn btn-save" onclick="saveNewMarker()">구역 임시 저장</button>
             </div>
         </div>
     </div>
 
     <div id="view-modal" class="modal-overlay" onclick="closeViewModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3 id="view-title">쓰레기통 배치 현황</h3>
-            <div style="margin-top: 15px; font-size: 15px; line-height: 1.8;">
-                <p><span class="info-label">📍 세부 위치:</span> <span id="view-location" class="info-value" style="font-weight: bold;"></span></p>
-                <p style="margin-bottom: 5px;"><span class="info-label">🗑️ 설치 종류:</span></p>
+            <h3 id="view-title">배치 현황 리포트</h3>
+            <div style="font-size: 14.5px; line-height: 1.7;">
+                <p><span class="info-label">📍 위치:</span> <span id="view-location" style="font-weight: bold;"></span></p>
+                <p style="margin-bottom: 2px;"><span class="info-label">🗑️ 종류:</span></p>
                 <div id="view-pills" class="info-pill-container"></div>
-                <p><span class="info-label">📋 정밀 보고:</span> <span id="view-desc" class="info-value"></span></p>
+                <p><span class="info-label">📋 보고메모:</span> <span id="view-desc"></span></p>
             </div>
             <div class="modal-buttons">
-                <button class="modal-btn btn-delete" id="delete-btn">전체 기록 삭제</button>
-                <button class="modal-btn btn-cancel" onclick="closeViewModal()" style="background-color: var(--primary-color); color: var(--white);">실태 확인 완료</button>
+                <button class="modal-btn btn-delete" id="delete-btn">해당 구역 삭제</button>
+                <button class="modal-btn btn-cancel" onclick="closeViewModal()" style="background: var(--primary-color); color: white;">닫기</button>
             </div>
         </div>
     </div>
@@ -460,126 +389,114 @@
     <script>
         let currentFloor = "1층";
         let currentSelectedMarkerId = null;
-
         let isDragging = false;
         let dragStartCoords = { x: 0, y: 0 }; 
         let dragEndCoords = { x: 0, y: 0 };   
         let activeSavedCoords = { x: 0, y: 0, width: 0, height: 0 }; 
-
+        
+        // 데이터 리스트 배열
         let trashBins = [];
 
         window.onload = function() {
             initInteractionEvents();
-            renderMarkers();
+            loadFromSessionStorage(); // 앱 실행 시 기존 임시 저장소 복원
         }
 
-        // 층수 변경
+        // 세션 스토리지 저장 (나갔다 들어와도 유지되는 브라우저 메모리 고정)
+        function saveToSessionStorage() {
+            sessionStorage.setItem('school_trash_data', JSON.stringify(trashBins));
+            alert("📍 현재까지 그린 지도 데이터가 브라우저 세션에 안전하게 저장되었습니다!\n(창을 아예 닫거나 새로고침하면 요구하신 대로 리셋됩니다)");
+        }
+
+        // 세션 스토리지 자동 로드
+        function loadFromSessionStorage() {
+            const savedData = sessionStorage.getItem('school_trash_data');
+            if (savedData) {
+                trashBins = JSON.parse(savedData);
+                renderMarkers();
+            }
+        }
+
+        // 전체 초기화 리셋 기능
+        function resetSessionStorage() {
+            if (confirm("정말로 지도의 모든 마킹 내역을 지우고 처음부터 다시 그리시겠습니까?")) {
+                sessionStorage.removeItem('school_trash_data');
+                trashBins = [];
+                renderMarkers();
+                alert("지도가 깨끗하게 리셋되었습니다.");
+            }
+        }
+
         function changeFloor(floor) {
             currentFloor = floor;
-            
             document.getElementById('btn-f1').classList.remove('active');
             document.getElementById('btn-f2').classList.remove('active');
             document.getElementById('btn-f3').classList.remove('active');
             document.getElementById('btn-f4').classList.remove('active');
-
             const mapImage = document.getElementById('map-image');
             
-            if (floor === '1층') {
-                document.getElementById('btn-f1').classList.add('active');
-                mapImage.src = 'floor1.jpg';
-            } else if (floor === '2층') {
-                document.getElementById('btn-f2').classList.add('active');
-                mapImage.src = 'floor2.jpg';
-            } else if (floor === '3층') {
-                document.getElementById('btn-f3').classList.add('active');
-                mapImage.src = 'floor3.jpg';
-            } else if (floor === '4층') {
-                document.getElementById('btn-f4').classList.add('active');
-                mapImage.src = 'floor4.jpg';
-            }
-
+            if (floor === '1층') { document.getElementById('btn-f1').classList.add('active'); mapImage.src = 'floor1.jpg'; }
+            else if (floor === '2층') { document.getElementById('btn-f2').classList.add('active'); mapImage.src = 'floor2.jpg'; }
+            else if (floor === '3층') { document.getElementById('btn-f3').classList.add('active'); mapImage.src = 'floor3.jpg'; }
+            else if (floor === '4층') { document.getElementById('btn-f4').classList.add('active'); mapImage.src = 'floor4.jpg'; }
             renderMarkers();
         }
 
-        // 마커 렌더링
         function renderMarkers() {
             const container = document.getElementById('marker-container');
             container.innerHTML = ""; 
-
             const currentFloorMarkers = trashBins.filter(bin => bin.floorName === currentFloor);
 
             currentFloorMarkers.forEach(bin => {
                 const hasWarning = bin.types.includes("쓰레기 무단 방치 구역 (경고)");
-
                 const zone = document.createElement('div');
                 zone.className = 'zone-highlight';
-                
                 zone.style.left = bin.x + "%";
                 zone.style.top = bin.y + "%";
                 zone.style.width = bin.width + "%";
                 zone.style.height = bin.height + "%";
                 zone.id = `zone-${bin.id}`;
 
-                if (hasWarning) {
-                    zone.classList.add('danger-zone');
-                }
+                if (hasWarning) zone.classList.add('danger-zone');
 
-                // 패드 환경을 고려해 클릭 및 터치 엔드에 모두 대응
                 const openModalHandler = (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
+                    e.stopPropagation(); e.preventDefault();
                     openViewModal(bin.id);
                 };
-                
                 zone.addEventListener('click', openModalHandler);
                 zone.addEventListener('touchend', openModalHandler);
-
                 container.appendChild(zone);   
             });
         }
 
-        // -------------------------------------------------------------
-        // 하이브리드 입력 제어 시스템 (PC 마우스 + 패드 멀티터치 완벽 호환)
-        // -------------------------------------------------------------
         function initInteractionEvents() {
             const wrapper = document.getElementById('map-wrapper');
-
-            // 1. PC 마우스 이벤트 바인딩
             wrapper.addEventListener('mousedown', (e) => handleDragStart(e.clientX, e.clientY, e.target));
             window.addEventListener('mousemove', (e) => handleDragMove(e.clientX, e.clientY));
             window.addEventListener('mouseup', (e) => handleDragEnd(e.clientX, e.clientY));
 
-            // 2. 패드/태블릿 터치 이벤트 바인딩 (스크롤 간섭 차단 속성 포함)
             wrapper.addEventListener('touchstart', (e) => {
                 const touch = e.touches[0];
                 handleDragStart(touch.clientX, touch.clientY, e.target);
             }, { passive: false });
-
             window.addEventListener('touchmove', (e) => {
                 if (!isDragging) return;
-                // 패드에서 드래그할 때 화면 전체가 꿀렁이며 위아래로 스크롤되는 버그 원천 차단
                 if (e.cancelable) e.preventDefault(); 
                 const touch = e.touches[0];
                 handleDragMove(touch.clientX, touch.clientY);
             }, { passive: false });
-
             window.addEventListener('touchend', (e) => {
                 if (!isDragging) return;
-                // 터치가 끝나는 순간의 좌표는 changedTouches에서 추출
                 const touch = e.changedTouches[0];
                 handleDragEnd(touch.clientX, touch.clientY);
             });
         }
 
-        // 공통 드래그 시작 로직
         function handleDragStart(clientX, clientY, target) {
             if (target.closest('.zone-highlight')) return;
-
             const wrapper = document.getElementById('map-wrapper');
             const rect = wrapper.getBoundingClientRect();
-
             isDragging = true;
-            
             dragStartCoords.x = clientX - rect.left;
             dragStartCoords.y = clientY - rect.top;
             dragEndCoords.x = dragStartCoords.x;
@@ -588,44 +505,31 @@
             const guide = document.getElementById('drag-guide-box');
             guide.style.left = dragStartCoords.x + "px";
             guide.style.top = dragStartCoords.y + "px";
-            guide.style.width = "0px";
-            guide.style.height = "0px";
+            guide.style.width = "0px"; guide.style.height = "0px";
             guide.style.display = "block";
         }
 
-        // 공통 드래그 무브 로직
         function handleDragMove(clientX, clientY) {
             if (!isDragging) return;
-
             const wrapper = document.getElementById('map-wrapper');
             const rect = wrapper.getBoundingClientRect();
-
             let currentX = clientX - rect.left;
             let currentY = clientY - rect.top;
-
             currentX = Math.max(0, Math.min(currentX, rect.width));
             currentY = Math.max(0, Math.min(currentY, rect.height));
-
-            dragEndCoords.x = currentX;
-            dragEndCoords.y = currentY;
+            dragEndCoords.x = currentX; dragEndCoords.y = currentY;
 
             const guide = document.getElementById('drag-guide-box');
             const width = Math.abs(dragEndCoords.x - dragStartCoords.x);
             const height = Math.abs(dragEndCoords.y - dragStartCoords.y);
-            const left = Math.min(dragStartCoords.x, dragEndCoords.x);
-            const top = Math.min(dragStartCoords.y, dragEndCoords.y);
-
-            guide.style.left = left + "px";
-            guide.style.top = top + "px";
-            guide.style.width = width + "px";
-            guide.style.height = height + "px";
+            guide.style.left = Math.min(dragStartCoords.x, dragEndCoords.x) + "px";
+            guide.style.top = Math.min(dragStartCoords.y, dragEndCoords.y) + "px";
+            guide.style.width = width + "px"; guide.style.height = height + "px";
         }
 
-        // 공통 드래그 종료 로직
         function handleDragEnd(clientX, clientY) {
             if (!isDragging) return;
             isDragging = false;
-
             const wrapper = document.getElementById('map-wrapper');
             const rect = wrapper.getBoundingClientRect();
             document.getElementById('drag-guide-box').style.display = "none"; 
@@ -633,32 +537,22 @@
             const widthPx = Math.abs(dragEndCoords.x - dragStartCoords.x);
             const heightPx = Math.abs(dragEndCoords.y - dragStartCoords.y);
 
-            // 단순 터치/클릭 시 기본 스퀘어 자동 보정 수식
             if (widthPx < 10 || heightPx < 10) {
-                let clickX = clientX - rect.left;
-                let clickY = clientY - rect.top;
-                clickX = Math.max(0, Math.min(clickX, rect.width));
-                clickY = Math.max(0, Math.min(clickY, rect.height));
-
-                const defaultW = 10;
-                const defaultH = 8;
-                const pctX = (clickX / rect.width) * 100;
-                const pctY = (clickY / rect.height) * 100;
-
+                let clickX = clientX - rect.left; let clickY = clientY - rect.top;
+                clickX = Math.max(0, Math.min(clickX, rect.width)); clickY = Math.max(0, Math.min(clickY, rect.height));
+                const defaultW = 10; const defaultH = 8;
+                const pctX = (clickX / rect.width) * 100; const pctY = (clickY / rect.height) * 100;
                 activeSavedCoords.x = parseFloat((pctX - defaultW / 2).toFixed(1));
                 activeSavedCoords.y = parseFloat((pctY - defaultH / 2).toFixed(1));
-                activeSavedCoords.width = defaultW;
-                activeSavedCoords.height = defaultH;
+                activeSavedCoords.width = defaultW; activeSavedCoords.height = defaultH;
             } else {
                 const leftPx = Math.min(dragStartCoords.x, dragEndCoords.x);
                 const topPx = Math.min(dragStartCoords.y, dragEndCoords.y);
-
                 activeSavedCoords.x = parseFloat(((leftPx / rect.width) * 100).toFixed(1));
                 activeSavedCoords.y = parseFloat(((topPx / rect.height) * 100).toFixed(1));
                 activeSavedCoords.width = parseFloat(((widthPx / rect.width) * 100).toFixed(1));
                 activeSavedCoords.height = parseFloat(((heightPx / rect.height) * 100).toFixed(1));
             }
-
             openAddModal();
         }
 
@@ -666,62 +560,31 @@
             document.getElementById('input-location').value = "";
             document.getElementById('input-desc').value = "";
             hideError(); 
-            
-            const checkboxes = document.querySelectorAll('input[name="bin-types"]');
-            checkboxes.forEach(cb => cb.checked = false);
-
+            document.querySelectorAll('input[name="bin-types"]').forEach(cb => cb.checked = false);
             document.getElementById('add-modal').classList.add('show');
         }
 
-        function closeAddModal() {
-            document.getElementById('add-modal').classList.remove('show');
-        }
-
-        function showError(msg) {
-            const errorDiv = document.getElementById('add-error-msg');
-            errorDiv.innerText = msg;
-            errorDiv.style.display = 'block';
-        }
-
-        function hideError() {
-            const errorDiv = document.getElementById('add-error-msg');
-            errorDiv.style.display = 'none';
-        }
+        function closeAddModal() { document.getElementById('add-modal').classList.remove('show'); }
+        function showError(msg) { const err = document.getElementById('add-error-msg'); err.innerText = msg; err.style.display = 'block'; }
+        function hideError() { document.getElementById('add-error-msg').style.display = 'none'; }
 
         function saveNewMarker() {
-            const locationText = document.getElementById('input-location').value.trim();
-            const descText = document.getElementById('input-desc').value.trim();
-            
-            const checkedBoxes = document.querySelectorAll('input[name="bin-types"]:checked');
-            const selectedTypes = Array.from(checkedBoxes).map(cb => cb.value);
+            const loc = document.getElementById('input-location').value.trim();
+            const desc = document.getElementById('input-desc').value.trim();
+            const checked = document.querySelectorAll('input[name="bin-types"]:checked');
+            const types = Array.from(checked).map(cb => cb.value);
 
             hideError();
-
-            if (!locationText) {
-                showError("정확한 장소의 명칭(이름)을 입력해 주세요!");
-                return;
-            }
-
-            if (selectedTypes.length === 0) {
-                showError("설치된 쓰레기통의 종류를 하나 이상 선택해 주세요!");
-                return;
-            }
+            if (!loc) { showError("장소 이름을 입력해 주세요!"); return; }
+            if (types.length === 0) { showError("쓰레기통 종류를 선택해 주세요!"); return; }
 
             const nextId = trashBins.length > 0 ? Math.max(...trashBins.map(b => b.id)) + 1 : 1;
-
-            const newBinObj = {
-                id: nextId,
-                floorName: currentFloor,
-                x: activeSavedCoords.x, 
-                y: activeSavedCoords.y,
-                width: activeSavedCoords.width,   
-                height: activeSavedCoords.height, 
-                location: locationText, 
-                types: selectedTypes,
-                desc: descText ? descText : "상세 정밀 기록이 등록되지 않았습니다." 
-            };
-
-            trashBins.push(newBinObj);
+            trashBins.push({
+                id: nextId, floorName: currentFloor,
+                x: activeSavedCoords.x, y: activeSavedCoords.y,
+                width: activeSavedCoords.width, height: activeSavedCoords.height,
+                location: loc, types: types, desc: desc ? desc : "세부 기록 없음."
+            });
 
             closeAddModal();
             renderMarkers();
@@ -729,49 +592,32 @@
 
         function openViewModal(id) {
             currentSelectedMarkerId = id;
-            const targetBin = trashBins.find(bin => bin.id === id);
+            const target = trashBins.find(bin => bin.id === id);
+            if (target) {
+                document.getElementById('view-title').innerText = `${target.floorName} 리포트`;
+                document.getElementById('view-location').innerText = target.location; 
+                document.getElementById('view-desc').innerText = target.desc;         
+                const container = document.getElementById('view-pills');
+                container.innerHTML = ""; 
 
-            if (targetBin) {
-                document.getElementById('view-title').innerText = `${targetBin.floorName} 배치 상세 리포트`;
-                document.getElementById('view-location').innerText = targetBin.location; 
-                document.getElementById('view-desc').innerText = targetBin.desc;         
-
-                const pillsContainer = document.getElementById('view-pills');
-                pillsContainer.innerHTML = ""; 
-
-                targetBin.types.forEach(type => {
+                target.types.forEach(type => {
                     const pill = document.createElement('span');
-                    pill.className = 'info-pill';
-                    pill.innerText = type;
-
+                    pill.className = 'info-pill'; pill.innerText = type;
                     if (type === "일반 쓰레기통") pill.classList.add('pill-general');
                     else if (type === "재활용 분리수거함 (혼합)") pill.classList.add('pill-mix');
                     else if (type === "페트병 / 캔 전용함") pill.classList.add('pill-pet');
                     else if (type === "종이 수거 전용 상자") pill.classList.add('pill-paper');
                     else if (type === "쓰레기 무단 방치 구역 (경고)") pill.classList.add('pill-danger');
-
-                    pillsContainer.appendChild(pill);
+                    container.appendChild(pill);
                 });
 
-                const delBtn = document.getElementById('delete-btn');
-                delBtn.onclick = function() {
-                    deleteMarker(id);
-                };
-
+                document.getElementById('delete-btn').onclick = function() { deleteMarker(id); };
                 document.getElementById('view-modal').classList.add('show');
             }
         }
 
-        function closeViewModal() {
-            document.getElementById('view-modal').classList.remove('show');
-            currentSelectedMarkerId = null;
-        }
-
-        function deleteMarker(id) {
-            trashBins = trashBins.filter(bin => bin.id !== id);
-            closeViewModal();
-            renderMarkers();
-        }
+        function closeViewModal() { document.getElementById('view-modal').classList.remove('show'); }
+        function deleteMarker(id) { trashBins = trashBins.filter(bin => bin.id !== id); closeViewModal(); renderMarkers(); }
     </script>
 </body>
 </html>
