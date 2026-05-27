@@ -19,7 +19,6 @@
         .control-panel { max-width: 850px; margin: 0 auto 12px auto; display: flex; flex-direction: column; gap: 12px; background: var(--white); padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
         .btn-group { display: flex; gap: 8px; justify-content: center; width: 100%; }
         
-        /* 📱 기본 모바일 층수 버튼 */
         .floor-btn { flex: 1; max-width: 120px; padding: 10px 0; font-size: 13.5px; font-weight: 600; cursor: pointer; border-radius: 25px; border: 1.5px solid #ddd; background-color: var(--white); color: #555; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; }
         .floor-btn.active { background-color: var(--primary-color); border-color: var(--primary-color); color: var(--white); font-weight: bold; box-shadow: 0 3px 8px rgba(46, 125, 50, 0.2); }
         
@@ -32,10 +31,19 @@
         .zone-highlight.danger-zone { border-color: rgba(229, 57, 53, 0.75); background-color: rgba(229, 57, 53, 0.03); }
         .zone-highlight.danger-zone:hover { border-style: solid; border-color: var(--danger-color); background-color: rgba(229, 57, 53, 0.18); box-shadow: 0 0 10px rgba(229, 57, 53, 0.4); }
         #drag-guide-box { position: absolute; border: 2px dashed var(--drag-color); background-color: rgba(0, 229, 255, 0.15); border-radius: 6px; display: none; z-index: 8; }
+        
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 15px; box-sizing: border-box; }
         .modal-overlay.show { display: flex; }
-        .modal-content { background: var(--white); padding: 20px; border-radius: 16px; text-align: left; max-width: 460px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.25); box-sizing: border-box; }
-        .modal-content h3 { margin-top: 0; color: var(--primary-dark); font-size: 17px; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-content { background: var(--white); padding: 20px; border-radius: 16px; text-align: left; max-width: 460px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.25); box-sizing: border-box; position: relative; }
+        
+        /* 모달 타이틀 영역 레이아웃 (수정 버튼 배치용) */
+        .modal-header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-content h3 { margin: 0; color: var(--primary-dark); font-size: 17px; }
+        
+        /* ✏️ 상세 창 상단 수정 아이콘 버튼 스타일 */
+        .edit-inline-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: #555; padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px; transition: all 0.2s; font-weight: 600; }
+        .edit-inline-btn:hover { background-color: #f0f0f0; color: var(--primary-color); }
+        
         .form-group { margin-bottom: 14px; }
         .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #555; }
         .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1.5px solid var(--gray-border); border-radius: 8px; box-sizing: border-box; font-size: 14px; }
@@ -54,16 +62,12 @@
         .btn-cancel { background-color: #eeeeee; color: #666; } .btn-save { background-color: var(--primary-color); color: var(--white); } .btn-delete { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
         .info-label { font-weight: 600; color: #555; display: inline-block; width: 75px; font-size: 13.5px; }
 
-        /* 📱 패드 및 대화면 대응 (버튼 대폭 확대) */
         @media (min-width: 520px) {
             body { padding: 20px; }
             h2 { font-size: 24px; }
             .control-panel { flex-direction: row; justify-content: space-between; align-items: center; padding: 15px; gap: 20px; }
             .btn-group { width: auto; gap: 12px; }
-            
-            /* 패드/PC에서 층수 버튼 크기 대폭 확대 */
             .floor-btn { max-width: 140px; padding: 14px 28px; font-size: 16px; border-radius: 30px; }
-            
             .action-btn { width: auto; padding: 14px 24px; font-size: 14.5px; }
             .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
             .checkbox-item.full-width { grid-column: span 2; }
@@ -100,9 +104,12 @@
         <div id="drag-guide-box"></div>
         <div id="marker-container"></div>
     </div>
+    
     <div id="add-modal" class="modal-overlay" onclick="closeAddModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3>📍 새 쓰레기 수거 구역 등록</h3>
+            <div class="modal-header-container">
+                <h3 id="add-modal-title">📍 새 쓰레기 수거 구역 등록</h3>
+            </div>
             <div class="form-group"><label for="input-location">장소 이름</label><input type="text" id="input-location" placeholder="예: 2층 무용실 앞 복도"></div>
             <div class="form-group">
                 <label>배치된 쓰레기통 목록</label>
@@ -116,12 +123,16 @@
             </div>
             <div class="form-group"><label for="input-desc">현황 기록 메모</label><textarea id="input-desc" rows="2" placeholder="세부 특징을 적어주세요."></textarea></div>
             <div id="add-error-msg" class="error-message"></div>
-            <div class="modal-buttons"><button class="modal-btn btn-cancel" onclick="closeAddModal()">취소</button><button class="modal-btn btn-save" onclick="saveNewMarker()">구역 저장</button></div>
+            <div class="modal-buttons"><button class="modal-btn btn-cancel" onclick="closeAddModal()">취소</button><button class="modal-btn btn-save" id="btn-save-main" onclick="saveMarkerData()">구역 저장</button></div>
         </div>
     </div>
+    
     <div id="view-modal" class="modal-overlay" onclick="closeViewModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3 id="view-title">배치 현황 리포트</h3>
+            <div class="modal-header-container">
+                <h3 id="view-title">배치 현황 리포트</h3>
+                <button class="edit-inline-btn" onclick="switchToEditMode()">✏️ 수정</button>
+            </div>
             <div style="font-size: 13.5px; line-height: 1.6;">
                 <p><span class="info-label">📍 위치:</span> <span id="view-location" style="font-weight: bold;"></span></p>
                 <p style="margin-bottom: 2px;"><span class="info-label">🗑️ 종류:</span></p>
@@ -131,8 +142,9 @@
             <div class="modal-buttons"><button class="modal-btn btn-delete" id="delete-btn">이 구역 삭제</button><button class="modal-btn btn-cancel" onclick="closeViewModal()" style="background: var(--primary-color); color: white;">닫기</button></div>
         </div>
     </div>
+    
     <script>
-        let currentFloor = "1층", currentSelectedMarkerId = null, isDragging = false;
+        let currentFloor = "1층", currentSelectedMarkerId = null, isDragging = false, isEditMode = false;
         let dragStartCoords = { x: 0, y: 0 }, dragEndCoords = { x: 0, y: 0 }, activeSavedCoords = { x: 0, y: 0, width: 0, height: 0 }, trashBins = [];
         const ADMIN_PASSWORD = "1234";
         window.onload = function() { initInteractionEvents(); loadFromLocalStorage(); }
@@ -196,16 +208,38 @@
             } else {
                 activeSavedCoords = { x: parseFloat(((Math.min(dragStartCoords.x, dragEndCoords.x) / rect.width) * 100).toFixed(1)), y: parseFloat(((Math.min(dragStartCoords.y, dragEndCoords.y) / rect.height) * 100).toFixed(1)), width: parseFloat(((wPx / rect.width) * 100).toFixed(1)), height: parseFloat(((hPx / rect.height) * 100).toFixed(1)) };
             }
+            isEditMode = false;
             openAddModal();
         }
-        function openAddModal() { document.getElementById('input-location').value = ""; document.getElementById('input-desc').value = ""; document.getElementById('add-error-msg').style.display = 'none'; document.querySelectorAll('input[name="bin-types"]').forEach(cb => cb.checked = false); document.getElementById('add-modal').classList.add('show'); }
-        function closeAddModal() { document.getElementById('add-modal').classList.remove('show'); }
-        function saveNewMarker() {
+        function openAddModal() { 
+            document.getElementById('add-error-msg').style.display = 'none'; 
+            if (isEditMode) {
+                document.getElementById('add-modal-title').innerText = "✏️ 수거 구역 정보 수정";
+                document.getElementById('btn-save-main').innerText = "수정 완료";
+            } else {
+                document.getElementById('add-modal-title').innerText = "📍 새 쓰레기 수거 구역 등록";
+                document.getElementById('btn-save-main').innerText = "구역 저장";
+                document.getElementById('input-location').value = ""; 
+                document.getElementById('input-desc').value = ""; 
+                document.querySelectorAll('input[name="bin-types"]').forEach(cb => cb.checked = false);
+            }
+            document.getElementById('add-modal').classList.add('show'); 
+        }
+        function closeAddModal() { document.getElementById('add-modal').classList.remove('show'); isEditMode = false; }
+        
+        function saveMarkerData() {
             const loc = document.getElementById('input-location').value.trim(), desc = document.getElementById('input-desc').value.trim(), checked = document.querySelectorAll('input[name="bin-types"]:checked'), types = Array.from(checked).map(cb => cb.value);
             if (!loc || types.length === 0) { const err = document.getElementById('add-error-msg'); err.innerText = "이름과 종류를 입력하세요."; err.style.display = 'block'; return; }
-            trashBins.push({ id: Date.now(), floorName: currentFloor, x: activeSavedCoords.x, y: activeSavedCoords.y, width: activeSavedCoords.width, height: activeSavedCoords.height, location: loc, types: types, desc: desc || "세부 기록 없음." });
+            
+            if (isEditMode) {
+                const target = trashBins.find(bin => bin.id === currentSelectedMarkerId);
+                if (target) { target.location = loc; target.types = types; target.desc = desc || "세부 기록 없음."; }
+            } else {
+                trashBins.push({ id: Date.now(), floorName: currentFloor, x: activeSavedCoords.x, y: activeSavedCoords.y, width: activeSavedCoords.width, height: activeSavedCoords.height, location: loc, types: types, desc: desc || "세부 기록 없음." });
+            }
             closeAddModal(); autoSaveToLocalStorage(); renderMarkers();
         }
+        
         function openViewModal(id) {
             currentSelectedMarkerId = id; const target = trashBins.find(bin => bin.id === id);
             if (target) {
@@ -221,6 +255,18 @@
             }
         }
         function closeViewModal() { document.getElementById('view-modal').classList.remove('show'); }
+        
+        /* 🔄 리포트 모달에서 수정 모드로 전환하는 함수 */
+        function switchToEditMode() {
+            const target = trashBins.find(bin => bin.id === currentSelectedMarkerId);
+            if (target) {
+                isEditMode = true; closeViewModal();
+                document.getElementById('input-location').value = target.location;
+                document.getElementById('input-desc').value = target.desc === "세부 기록 없음." ? "" : target.desc;
+                document.querySelectorAll('input[name="bin-types"]').forEach(cb => { cb.checked = target.types.includes(cb.value); });
+                openAddModal();
+            }
+        }
     </script>
 </body>
 </html>
