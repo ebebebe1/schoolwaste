@@ -5,321 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>우리 학교 쓰레기통 동적 지도 서비스</title>
     <style>
-        /* 깔끔한 UI 시스템 정의 */
         :root {
-            --primary-color: #2e7d32;
-            --primary-light: #e8f5e9;
-            --primary-dark: #1b5e20;
-            --accent-color: #ff9100;
-            --drag-color: #00e5ff; 
-            --zone-color: #2962ff; 
-            --zone-light: rgba(41, 98, 255, 0.05);
-            --zone-hover: rgba(41, 98, 255, 0.2);
-            --danger-color: #e53935;
-            --danger-light: #ffebee;
-            --text-dark: #333333;
-            --bg-light: #f4f6f8;
-            --white: #ffffff;
-            --gray-border: #e0e0e0;
+            --primary-color: #2e7d32; --primary-light: #e8f5e9; --primary-dark: #1b5e20; --accent-color: #ff9100;
+            --drag-color: #00e5ff; --zone-color: #2962ff; --zone-light: rgba(41, 98, 255, 0.05); --zone-hover: rgba(41, 98, 255, 0.2);
+            --danger-color: #e53935; --danger-light: #ffebee; --text-dark: #333333; --bg-light: #f4f6f8; --white: #ffffff; --gray-border: #e0e0e0;
         }
-
-        body {
-            font-family: 'Segoe UI', AppleSDGothicNeo-Regular, sans-serif;
-            text-align: center;
-            background-color: var(--bg-light);
-            margin: 0;
-            padding: 20px;
-            color: var(--text-dark);
-            user-select: none; 
-            -webkit-user-select: none;
-        }
-
-        header {
-            margin-bottom: 25px;
-        }
-
-        h2 {
-            color: var(--primary-dark);
-            margin-bottom: 5px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .subtitle {
-            color: #666;
-            margin-top: 0;
-            font-size: 14.5px;
-        }
-
-        .guide-box {
-            background-color: var(--white);
-            border-left: 5px solid var(--accent-color);
-            padding: 15px 20px;
-            max-width: 850px;
-            margin: 0 auto 20px auto;
-            border-radius: 4px 12px 12px 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            text-align: left;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .guide-box strong {
-            color: var(--accent-color);
-        }
-
-        /* 컨트롤 패널 그룹 */
-        .control-panel {
-            max-width: 850px;
-            margin: 0 auto 20px auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            background: var(--white);
-            padding: 15px 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .floor-btn {
-            padding: 10px 22px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: 50px;
-            border: 2px solid #ddd;
-            background-color: var(--white);
-            color: #555;
-            transition: all 0.3s ease;
-        }
-
-        .floor-btn.active {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            color: var(--white);
-            box-shadow: 0 4px 10px rgba(46, 125, 50, 0.2);
-        }
-
-        /* 임시 저장 및 리셋 액션 버튼 */
-        .action-btn {
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-db-save {
-            background-color: #0288d1;
-            color: white;
-        }
-        .btn-db-save:hover { background-color: #01579b; }
-
-        .btn-db-reset {
-            background-color: #757575;
-            color: white;
-        }
-        .btn-db-reset:hover { background-color: #424242; }
-
-        #map-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 850px;
-            margin: 0 auto;
-            border-radius: 20px;
-            box-shadow: 0 0 0 4px var(--white), 0 10px 30px rgba(0,0,0,0.12);
-            overflow: hidden;
-            background-color: #eaeaea;
-            cursor: crosshair; 
-            touch-action: none; 
-        }
-
-        #map-image {
-            width: 100%;
-            height: auto;
-            display: block;
-            -webkit-user-drag: none;
-            user-select: none;
-        }
-
-        .zone-highlight {
-            position: absolute;
-            border: 2.5px dashed rgba(41, 98, 255, 0.75);
-            background-color: var(--zone-light);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            z-index: 5;
-        }
-
-        .zone-highlight.hovered, .zone-highlight:hover {
-            border: 3px solid var(--zone-color);
-            background-color: var(--zone-hover);
-            box-shadow: 0 0 15px rgba(41, 98, 255, 0.5);
-            z-index: 10;
-        }
-
-        .zone-highlight.danger-zone {
-            border-color: rgba(229, 57, 53, 0.75);
-            background-color: rgba(229, 57, 53, 0.03);
-        }
-
-        .zone-highlight.danger-zone.hovered, .zone-highlight.danger-zone:hover {
-            border-style: solid;
-            border-color: var(--danger-color);
-            background-color: rgba(229, 57, 53, 0.2);
-            box-shadow: 0 0 15px rgba(229, 57, 53, 0.5);
-        }
-
-        #drag-guide-box {
-            position: absolute;
-            border: 2.5px dashed var(--drag-color);
-            background-color: rgba(0, 229, 255, 0.15);
-            border-radius: 8px;
-            display: none;
-            z-index: 8;
-        }
-
-        /* 모달 시스템 */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-
+        body { font-family: 'Segoe UI', AppleSDGothicNeo-Regular, sans-serif; text-align: center; background-color: var(--bg-light); margin: 0; padding: 20px; color: var(--text-dark); user-select: none; -webkit-user-select: none; }
+        header { margin-bottom: 25px; }
+        h2 { color: var(--primary-dark); margin-bottom: 5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .subtitle { color: #666; margin-top: 0; font-size: 14.5px; }
+        .guide-box { background-color: var(--white); border-left: 5px solid var(--accent-color); padding: 15px 20px; max-width: 850px; margin: 0 auto 20px auto; border-radius: 4px 12px 12px 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: left; font-size: 14px; line-height: 1.6; }
+        .control-panel { max-width: 850px; margin: 0 auto 20px auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background: var(--white); padding: 15px 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .floor-btn { padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 50px; border: 2px solid #ddd; background-color: var(--white); color: #555; transition: all 0.3s ease; }
+        .floor-btn.active { background-color: var(--primary-color); border-color: var(--primary-color); color: var(--white); box-shadow: 0 4px 10px rgba(46, 125, 50, 0.2); }
+        .action-btn { padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 6px; }
+        .btn-db-save { background-color: #0288d1; color: white; }
+        .btn-db-reset { background-color: #757575; color: white; }
+        #map-wrapper { position: relative; width: 100%; max-width: 850px; margin: 0 auto; border-radius: 20px; box-shadow: 0 0 0 4px var(--white), 0 10px 30px rgba(0,0,0,0.12); overflow: hidden; background-color: #eaeaea; cursor: crosshair; touch-action: none; }
+        #map-image { width: 100%; height: auto; display: block; -webkit-user-drag: none; user-select: none; }
+        .zone-highlight { position: absolute; border: 2.5px dashed rgba(41, 98, 255, 0.75); background-color: var(--zone-light); border-radius: 8px; cursor: pointer; transition: all 0.25s ease; z-index: 5; }
+        .zone-highlight.hovered, .zone-highlight:hover { border: 3px solid var(--zone-color); background-color: var(--zone-hover); box-shadow: 0 0 15px rgba(41, 98, 255, 0.5); z-index: 10; }
+        .zone-highlight.danger-zone { border-color: rgba(229, 57, 53, 0.75); background-color: rgba(229, 57, 53, 0.03); }
+        .zone-highlight.danger-zone:hover { border-style: solid; border-color: var(--danger-color); background-color: rgba(229, 57, 53, 0.2); box-shadow: 0 0 15px rgba(229, 57, 53, 0.5); }
+        #drag-guide-box { position: absolute; border: 2.5px dashed var(--drag-color); background-color: rgba(0, 229, 255, 0.15); border-radius: 8px; display: none; z-index: 8; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100; }
         .modal-overlay.show { display: flex; }
-
-        .modal-content {
-            background: var(--white);
-            padding: 30px;
-            border-radius: 20px;
-            text-align: left;
-            max-width: 480px;
-            width: 90%;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-        }
-
-        .modal-content h3 {
-            margin-top: 0;
-            color: var(--primary-dark);
-            font-size: 20px;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 12px;
-        }
-
+        .modal-content { background: var(--white); padding: 30px; border-radius: 20px; text-align: left; max-width: 480px; width: 90%; box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
+        .modal-content h3 { margin-top: 0; color: var(--primary-dark); font-size: 20px; border-bottom: 2px solid #eee; padding-bottom: 12px; }
         .form-group { margin-bottom: 18px; }
-
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #555;
-        }
-
-        .form-group input, .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid var(--gray-border);
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-
-        .error-message {
-            color: var(--danger-color);
-            font-size: 13px;
-            font-weight: 600;
-            margin-top: 6px;
-            display: none;
-            background-color: var(--danger-light);
-            padding: 8px 12px;
-            border-radius: 6px;
-        }
-
-        .checkbox-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1.5px dashed #ccc;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13.5px;
-        }
-
-        .info-pill-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin: 10px 0;
-        }
-
-        .info-pill {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            color: white;
-        }
-
-        .pill-general { background-color: #2e7d32; }
-        .pill-mix { background-color: #9c27b0; }
-        .pill-pet { background-color: #1e88e5; }
-        .pill-paper { background-color: #ff8f00; }
-        .pill-danger { background-color: #e53935; }
-
+        .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #555; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 2px solid var(--gray-border); border-radius: 8px; box-sizing: border-box; }
+        .error-message { color: var(--danger-color); font-size: 13px; font-weight: 600; margin-top: 6px; display: none; background-color: var(--danger-light); padding: 8px 12px; border-radius: 6px; }
+        .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f8f9fa; padding: 12px; border-radius: 10px; border: 1.5px dashed #ccc; }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+        .info-pill-container { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+        .info-pill { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; color: white; }
+        .pill-general { background-color: #2e7d32; } .pill-mix { background-color: #9c27b0; } .pill-pet { background-color: #1e88e5; } .pill-paper { background-color: #ff8f00; } .pill-danger { background-color: #e53935; }
         .modal-buttons { display: flex; gap: 10px; margin-top: 25px; }
-
-        .modal-btn {
-            flex: 1; padding: 12px; font-size: 15px; font-weight: 600;
-            border: none; border-radius: 8px; cursor: pointer;
-        }
-
-        .btn-cancel { background-color: #eeeeee; color: #666; }
-        .btn-save { background-color: var(--primary-color); color: var(--white); }
-        .btn-delete { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
-
+        .modal-btn { flex: 1; padding: 12px; font-size: 15px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-cancel { background-color: #eeeeee; color: #666; } .btn-save { background-color: var(--primary-color); color: var(--white); } .btn-delete { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
         .info-label { font-weight: 600; color: #555; display: inline-block; width: 90px; }
     </style>
 </head>
 <body>
-
     <header>
         <h2>🧹 실시간 교내 쓰레기통 참여형 지도 📍</h2>
-        <p class="subtitle">학급 특색 활동: 교내 분리수거 및 무단 투기 실태 시각화 지도 (1층~4층)</p>
+        <p class="subtitle">학급 특색 활동: 교내 분리수거 및 무단 투기 실태 시각화 지도</p>
     </header>
-
     <div class="guide-box">
-        💾 <strong>상태 보존 기능 탑재:</strong> 구역을 그리고 정보를 기입한 뒤 우측의 <strong>[💾 브라우저 임시 저장]</strong>을 누르면, 패드가 잠기거나 다른 사이트에 갔다 와도 데이터가 그대로 복원됩니다. 단, 탭을 아예 닫거나 새로고침하면 요구하신 대로 리셋됩니다.
+        🔒 <strong>영구 저장 모드 작동 중:</strong> 이제 웹 브라우저 탭을 완전히 닫거나 패드를 껐다 켜도 데이터가 사라지지 않고 영구 보존됩니다! (오직 관리자가 깃허브 서버를 Unpublish 하거나 아래 초기화 버튼을 누를 때만 리셋됩니다)
     </div>
-
     <div class="control-panel">
         <div class="btn-group">
             <button class="floor-btn active" id="btn-f1" onclick="changeFloor('1층')">1층 지도</button>
@@ -328,24 +64,18 @@
             <button class="floor-btn" id="btn-f4" onclick="changeFloor('4층')">4층 지도</button>
         </div>
         <div class="btn-group">
-            <button class="action-btn btn-db-save" onclick="saveToSessionStorage()">💾 브라우저 임시 저장</button>
-            <button class="action-btn btn-db-reset" onclick="resetSessionStorage()">🔄 지도 전체 초기화</button>
+            <button class="action-btn btn-db-reset" onclick="resetLocalStorage()">🔄 지도 전체 초기화</button>
         </div>
     </div>
-
     <div id="map-wrapper">
-        <img id="map-image" src="floor1.jpg" alt="학교 평면도 배경" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'450\' style=\'background:%23eaeaea;\'><text x=\'50%\' y=\'50%\' font-size=\'18\' fill=\'%23666\' text-anchor=\'middle\' dy=\'.3em\'>[floor1.jpg 파일 누락] 평면도 이미지를 업로드해 주세요.</text></svg>'">
+        <img id="map-image" src="floor1.jpg" alt="학교 평면도" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'450\' style=\'background:%23eaeaea;\'><text x=\'50%\' y=\'50%\' font-size=\'18\' fill=\'%23666\' text-anchor=\'middle\'>[이미지 로딩 중...] 잠시만 기다리시거나 파일명을 확인해 주세요.</text></svg>'">
         <div id="drag-guide-box"></div>
         <div id="marker-container"></div>
     </div>
-
     <div id="add-modal" class="modal-overlay" onclick="closeAddModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3>📍 새 쓰레기 수거 구역 등록</h3>
-            <div class="form-group">
-                <label for="input-location">구체적인 장소 이름</label>
-                <input type="text" id="input-location" placeholder="예: 2층 복도 무용실 앞">
-            </div>
+            <div class="form-group"><label for="input-location">구체적인 장소 이름</label><input type="text" id="input-location" placeholder="예: 2층 복도 무용실 앞"></div>
             <div class="form-group">
                 <label>배치된 쓰레기통 목록</label>
                 <div class="checkbox-grid">
@@ -353,23 +83,14 @@
                     <label class="checkbox-item"><input type="checkbox" name="bin-types" value="재활용 분리수거함 (혼합)"> 혼합 분리함</label>
                     <label class="checkbox-item"><input type="checkbox" name="bin-types" value="페트병 / 캔 전용함"> 페트병 / 캔함</label>
                     <label class="checkbox-item"><input type="checkbox" name="bin-types" value="종이 수거 전용 상자"> 종이 수거함</label>
-                    <label class="checkbox-item" style="grid-column: span 2; color: var(--danger-color); font-weight: bold;">
-                        <input type="checkbox" name="bin-types" value="쓰레기 무단 방치 구역 (경고)"> ⚠️ 무단 방치 구역 (경고)
-                    </label>
+                    <label class="checkbox-item" style="grid-column: span 2; color: var(--danger-color); font-weight: bold;"><input type="checkbox" name="bin-types" value="쓰레기 무단 방치 구역 (경고)"> ⚠️ 무단 방치 구역 (경고)</label>
                 </div>
             </div>
-            <div class="form-group">
-                <label for="input-desc">현황 기록 메모</label>
-                <textarea id="input-desc" rows="2" placeholder="세부 메모를 기입하세요."></textarea>
-            </div>
+            <div class="form-group"><label for="input-desc">현황 기록 메모</label><textarea id="input-desc" rows="2" placeholder="세부 메모를 기입하세요."></textarea></div>
             <div id="add-error-msg" class="error-message"></div>
-            <div class="modal-buttons">
-                <button class="modal-btn btn-cancel" onclick="closeAddModal()">취소</button>
-                <button class="modal-btn btn-save" onclick="saveNewMarker()">구역 임시 저장</button>
-            </div>
+            <div class="modal-buttons"><button class="modal-btn btn-cancel" onclick="closeAddModal()">취소</button><button class="modal-btn btn-save" onclick="saveNewMarker()">구역 영구 저장</button></div>
         </div>
     </div>
-
     <div id="view-modal" class="modal-overlay" onclick="closeViewModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 id="view-title">배치 현황 리포트</h3>
@@ -379,245 +100,92 @@
                 <div id="view-pills" class="info-pill-container"></div>
                 <p><span class="info-label">📋 보고메모:</span> <span id="view-desc"></span></p>
             </div>
-            <div class="modal-buttons">
-                <button class="modal-btn btn-delete" id="delete-btn">해당 구역 삭제</button>
-                <button class="modal-btn btn-cancel" onclick="closeViewModal()" style="background: var(--primary-color); color: white;">닫기</button>
-            </div>
+            <div class="modal-buttons"><button class="modal-btn btn-delete" id="delete-btn">해당 구역 삭제</button><button class="modal-btn btn-cancel" onclick="closeViewModal()" style="background: var(--primary-color); color: white;">닫기</button></div>
         </div>
     </div>
-
     <script>
-        let currentFloor = "1층";
-        let currentSelectedMarkerId = null;
-        let isDragging = false;
-        let dragStartCoords = { x: 0, y: 0 }; 
-        let dragEndCoords = { x: 0, y: 0 };   
-        let activeSavedCoords = { x: 0, y: 0, width: 0, height: 0 }; 
-        
-        // 데이터 리스트 배열
-        let trashBins = [];
-
-        window.onload = function() {
-            initInteractionEvents();
-            loadFromSessionStorage(); // 앱 실행 시 기존 임시 저장소 복원
-        }
-
-        // 세션 스토리지 저장 (나갔다 들어와도 유지되는 브라우저 메모리 고정)
-        function saveToSessionStorage() {
-            sessionStorage.setItem('school_trash_data', JSON.stringify(trashBins));
-            alert("📍 현재까지 그린 지도 데이터가 브라우저 세션에 안전하게 저장되었습니다!\n(창을 아예 닫거나 새로고침하면 요구하신 대로 리셋됩니다)");
-        }
-
-        // 세션 스토리지 자동 로드
-        function loadFromSessionStorage() {
-            const savedData = sessionStorage.getItem('school_trash_data');
-            if (savedData) {
-                trashBins = JSON.parse(savedData);
-                renderMarkers();
-            }
-        }
-
-        // 전체 초기화 리셋 기능
-        function resetSessionStorage() {
-            if (confirm("정말로 지도의 모든 마킹 내역을 지우고 처음부터 다시 그리시겠습니까?")) {
-                sessionStorage.removeItem('school_trash_data');
-                trashBins = [];
-                renderMarkers();
-                alert("지도가 깨끗하게 리셋되었습니다.");
-            }
-        }
-
+        let currentFloor = "1층", currentSelectedMarkerId = null, isDragging = false;
+        let dragStartCoords = { x: 0, y: 0 }, dragEndCoords = { x: 0, y: 0 }, activeSavedCoords = { x: 0, y: 0, width: 0, height: 0 }, trashBins = [];
+        window.onload = function() { initInteractionEvents(); loadFromLocalStorage(); }
+        function autoSaveToLocalStorage() { localStorage.setItem('school_trash_data_permanent', JSON.stringify(trashBins)); }
+        function loadFromLocalStorage() { const savedData = localStorage.getItem('school_trash_data_permanent'); if (savedData) { trashBins = JSON.parse(savedData); renderMarkers(); } }
+        function resetLocalStorage() { if (confirm("지도의 모든 마킹 내역을 완전히 초기화하시겠습니까?")) { localStorage.removeItem('school_trash_data_permanent'); trashBins = []; renderMarkers(); alert("리셋되었습니다."); } }
         function changeFloor(floor) {
-            currentFloor = floor;
-            document.getElementById('btn-f1').classList.remove('active');
-            document.getElementById('btn-f2').classList.remove('active');
-            document.getElementById('btn-f3').classList.remove('active');
-            document.getElementById('btn-f4').classList.remove('active');
+            currentFloor = floor; document.getElementById('btn-f1').classList.remove('active'); document.getElementById('btn-f2').classList.remove('active'); document.getElementById('btn-f3').classList.remove('active'); document.getElementById('btn-f4').classList.remove('active');
             const mapImage = document.getElementById('map-image');
-            
             if (floor === '1층') { document.getElementById('btn-f1').classList.add('active'); mapImage.src = 'floor1.jpg'; }
             else if (floor === '2층') { document.getElementById('btn-f2').classList.add('active'); mapImage.src = 'floor2.jpg'; }
             else if (floor === '3층') { document.getElementById('btn-f3').classList.add('active'); mapImage.src = 'floor3.jpg'; }
             else if (floor === '4층') { document.getElementById('btn-f4').classList.add('active'); mapImage.src = 'floor4.jpg'; }
             renderMarkers();
         }
-
         function renderMarkers() {
-            const container = document.getElementById('marker-container');
-            container.innerHTML = ""; 
-            const currentFloorMarkers = trashBins.filter(bin => bin.floorName === currentFloor);
-
-            currentFloorMarkers.forEach(bin => {
-                const hasWarning = bin.types.includes("쓰레기 무단 방치 구역 (경고)");
-                const zone = document.createElement('div');
-                zone.className = 'zone-highlight';
-                zone.style.left = bin.x + "%";
-                zone.style.top = bin.y + "%";
-                zone.style.width = bin.width + "%";
-                zone.style.height = bin.height + "%";
-                zone.id = `zone-${bin.id}`;
-
-                if (hasWarning) zone.classList.add('danger-zone');
-
-                const openModalHandler = (e) => {
-                    e.stopPropagation(); e.preventDefault();
-                    openViewModal(bin.id);
-                };
-                zone.addEventListener('click', openModalHandler);
-                zone.addEventListener('touchend', openModalHandler);
-                container.appendChild(zone);   
+            const container = document.getElementById('marker-container'); container.innerHTML = "";
+            trashBins.filter(bin => bin.floorName === currentFloor).forEach(bin => {
+                const zone = document.createElement('div'); zone.className = 'zone-highlight';
+                zone.style.left = bin.x + "%"; zone.style.top = bin.y + "%"; zone.style.width = bin.width + "%"; zone.style.height = bin.height + "%";
+                if (bin.types.includes("쓰레기 무단 방치 구역 (경고)")) zone.classList.add('danger-zone');
+                const openModalHandler = (e) => { e.stopPropagation(); e.preventDefault(); openViewModal(bin.id); };
+                zone.addEventListener('click', openModalHandler); zone.addEventListener('touchend', openModalHandler);
+                container.appendChild(zone);
             });
         }
-
         function initInteractionEvents() {
             const wrapper = document.getElementById('map-wrapper');
             wrapper.addEventListener('mousedown', (e) => handleDragStart(e.clientX, e.clientY, e.target));
             window.addEventListener('mousemove', (e) => handleDragMove(e.clientX, e.clientY));
             window.addEventListener('mouseup', (e) => handleDragEnd(e.clientX, e.clientY));
-
-            wrapper.addEventListener('touchstart', (e) => {
-                const touch = e.touches[0];
-                handleDragStart(touch.clientX, touch.clientY, e.target);
-            }, { passive: false });
-            window.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                if (e.cancelable) e.preventDefault(); 
-                const touch = e.touches[0];
-                handleDragMove(touch.clientX, touch.clientY);
-            }, { passive: false });
-            window.addEventListener('touchend', (e) => {
-                if (!isDragging) return;
-                const touch = e.changedTouches[0];
-                handleDragEnd(touch.clientX, touch.clientY);
-            });
+            wrapper.addEventListener('touchstart', (e) => handleDragStart(e.touches[0].clientX, e.touches[0].clientY, e.target), { passive: false });
+            window.addEventListener('touchmove', (e) => { if (!isDragging) return; if (e.cancelable) e.preventDefault(); handleDragMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+            window.addEventListener('touchend', (e) => { if (isDragging) handleDragEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY); });
         }
-
         function handleDragStart(clientX, clientY, target) {
-            if (target.closest('.zone-highlight')) return;
-            const wrapper = document.getElementById('map-wrapper');
-            const rect = wrapper.getBoundingClientRect();
-            isDragging = true;
-            dragStartCoords.x = clientX - rect.left;
-            dragStartCoords.y = clientY - rect.top;
-            dragEndCoords.x = dragStartCoords.x;
-            dragEndCoords.y = dragStartCoords.y;
-
-            const guide = document.getElementById('drag-guide-box');
-            guide.style.left = dragStartCoords.x + "px";
-            guide.style.top = dragStartCoords.y + "px";
-            guide.style.width = "0px"; guide.style.height = "0px";
-            guide.style.display = "block";
+            if (target.closest('.zone-highlight')) return; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
+            isDragging = true; dragStartCoords.x = clientX - rect.left; dragStartCoords.y = clientY - rect.top;
+            dragEndCoords.x = dragStartCoords.x; dragEndCoords.y = dragStartCoords.y;
+            const guide = document.getElementById('drag-guide-box'); guide.style.left = dragStartCoords.x + "px"; guide.style.top = dragStartCoords.y + "px"; guide.style.width = "0px"; guide.style.height = "0px"; guide.style.display = "block";
         }
-
         function handleDragMove(clientX, clientY) {
-            if (!isDragging) return;
-            const wrapper = document.getElementById('map-wrapper');
-            const rect = wrapper.getBoundingClientRect();
-            let currentX = clientX - rect.left;
-            let currentY = clientY - rect.top;
-            currentX = Math.max(0, Math.min(currentX, rect.width));
-            currentY = Math.max(0, Math.min(currentY, rect.height));
-            dragEndCoords.x = currentX; dragEndCoords.y = currentY;
-
-            const guide = document.getElementById('drag-guide-box');
-            const width = Math.abs(dragEndCoords.x - dragStartCoords.x);
-            const height = Math.abs(dragEndCoords.y - dragStartCoords.y);
-            guide.style.left = Math.min(dragStartCoords.x, dragEndCoords.x) + "px";
-            guide.style.top = Math.min(dragStartCoords.y, dragEndCoords.y) + "px";
-            guide.style.width = width + "px"; guide.style.height = height + "px";
+            if (!isDragging) return; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
+            dragEndCoords.x = Math.max(0, Math.min(clientX - rect.left, rect.width)); dragEndCoords.y = Math.max(0, Math.min(clientY - rect.top, rect.height));
+            const guide = document.getElementById('drag-guide-box'), w = Math.abs(dragEndCoords.x - dragStartCoords.x), h = Math.abs(dragEndCoords.y - dragStartCoords.y);
+            guide.style.left = Math.min(dragStartCoords.x, dragEndCoords.x) + "px"; guide.style.top = Math.min(dragStartCoords.y, dragEndCoords.y) + "px"; guide.style.width = w + "px"; guide.style.height = h + "px";
         }
-
         function handleDragEnd(clientX, clientY) {
-            if (!isDragging) return;
-            isDragging = false;
-            const wrapper = document.getElementById('map-wrapper');
-            const rect = wrapper.getBoundingClientRect();
-            document.getElementById('drag-guide-box').style.display = "none"; 
-
-            const widthPx = Math.abs(dragEndCoords.x - dragStartCoords.x);
-            const heightPx = Math.abs(dragEndCoords.y - dragStartCoords.y);
-
-            if (widthPx < 10 || heightPx < 10) {
-                let clickX = clientX - rect.left; let clickY = clientY - rect.top;
-                clickX = Math.max(0, Math.min(clickX, rect.width)); clickY = Math.max(0, Math.min(clickY, rect.height));
-                const defaultW = 10; const defaultH = 8;
-                const pctX = (clickX / rect.width) * 100; const pctY = (clickY / rect.height) * 100;
-                activeSavedCoords.x = parseFloat((pctX - defaultW / 2).toFixed(1));
-                activeSavedCoords.y = parseFloat((pctY - defaultH / 2).toFixed(1));
-                activeSavedCoords.width = defaultW; activeSavedCoords.height = defaultH;
+            if (!isDragging) return; isDragging = false; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
+            document.getElementById('drag-guide-box').style.display = "none";
+            const wPx = Math.abs(dragEndCoords.x - dragStartCoords.x), hPx = Math.abs(dragEndCoords.y - dragStartCoords.y);
+            if (wPx < 10 || hPx < 10) {
+                let cx = Math.max(0, Math.min(clientX - rect.left, rect.width)), cy = Math.max(0, Math.min(clientY - rect.top, rect.height));
+                activeSavedCoords = { x: parseFloat(((cx / rect.width) * 100 - 5).toFixed(1)), y: parseFloat(((cy / rect.height) * 100 - 4).toFixed(1)), width: 10, height: 8 };
             } else {
-                const leftPx = Math.min(dragStartCoords.x, dragEndCoords.x);
-                const topPx = Math.min(dragStartCoords.y, dragEndCoords.y);
-                activeSavedCoords.x = parseFloat(((leftPx / rect.width) * 100).toFixed(1));
-                activeSavedCoords.y = parseFloat(((topPx / rect.height) * 100).toFixed(1));
-                activeSavedCoords.width = parseFloat(((widthPx / rect.width) * 100).toFixed(1));
-                activeSavedCoords.height = parseFloat(((heightPx / rect.height) * 100).toFixed(1));
+                activeSavedCoords = { x: parseFloat(((Math.min(dragStartCoords.x, dragEndCoords.x) / rect.width) * 100).toFixed(1)), y: parseFloat(((Math.min(dragStartCoords.y, dragEndCoords.y) / rect.height) * 100).toFixed(1)), width: parseFloat(((wPx / rect.width) * 100).toFixed(1)), height: parseFloat(((hPx / rect.height) * 100).toFixed(1)) };
             }
             openAddModal();
         }
-
-        function openAddModal() {
-            document.getElementById('input-location').value = "";
-            document.getElementById('input-desc').value = "";
-            hideError(); 
-            document.querySelectorAll('input[name="bin-types"]').forEach(cb => cb.checked = false);
-            document.getElementById('add-modal').classList.add('show');
-        }
-
+        function openAddModal() { document.getElementById('input-location').value = ""; document.getElementById('input-desc').value = ""; document.getElementById('add-error-msg').style.display = 'none'; document.querySelectorAll('input[name="bin-types"]').forEach(cb => cb.checked = false); document.getElementById('add-modal').classList.add('show'); }
         function closeAddModal() { document.getElementById('add-modal').classList.remove('show'); }
-        function showError(msg) { const err = document.getElementById('add-error-msg'); err.innerText = msg; err.style.display = 'block'; }
-        function hideError() { document.getElementById('add-error-msg').style.display = 'none'; }
-
         function saveNewMarker() {
-            const loc = document.getElementById('input-location').value.trim();
-            const desc = document.getElementById('input-desc').value.trim();
-            const checked = document.querySelectorAll('input[name="bin-types"]:checked');
-            const types = Array.from(checked).map(cb => cb.value);
-
-            hideError();
-            if (!loc) { showError("장소 이름을 입력해 주세요!"); return; }
-            if (types.length === 0) { showError("쓰레기통 종류를 선택해 주세요!"); return; }
-
-            const nextId = trashBins.length > 0 ? Math.max(...trashBins.map(b => b.id)) + 1 : 1;
-            trashBins.push({
-                id: nextId, floorName: currentFloor,
-                x: activeSavedCoords.x, y: activeSavedCoords.y,
-                width: activeSavedCoords.width, height: activeSavedCoords.height,
-                location: loc, types: types, desc: desc ? desc : "세부 기록 없음."
-            });
-
-            closeAddModal();
-            renderMarkers();
+            const loc = document.getElementById('input-location').value.trim(), desc = document.getElementById('input-desc').value.trim(), checked = document.querySelectorAll('input[name="bin-types"]:checked'), types = Array.from(checked).map(cb => cb.value);
+            if (!loc || types.length === 0) { const err = document.getElementById('add-error-msg'); err.innerText = "이름과 쓰레기통 종류를 입력하세요."; err.style.display = 'block'; return; }
+            trashBins.push({ id: Date.now(), floorName: currentFloor, x: activeSavedCoords.x, y: activeSavedCoords.y, width: activeSavedCoords.width, height: activeSavedCoords.height, location: loc, types: types, desc: desc || "세부 기록 없음." });
+            closeAddModal(); autoSaveToLocalStorage(); renderMarkers();
         }
-
         function openViewModal(id) {
-            currentSelectedMarkerId = id;
-            const target = trashBins.find(bin => bin.id === id);
+            currentSelectedMarkerId = id; const target = trashBins.find(bin => bin.id === id);
             if (target) {
-                document.getElementById('view-title').innerText = `${target.floorName} 리포트`;
-                document.getElementById('view-location').innerText = target.location; 
-                document.getElementById('view-desc').innerText = target.desc;         
-                const container = document.getElementById('view-pills');
-                container.innerHTML = ""; 
-
+                document.getElementById('view-title').innerText = `${target.floorName} 리포트`; document.getElementById('view-location').innerText = target.location; document.getElementById('view-desc').innerText = target.desc;
+                const container = document.getElementById('view-pills'); container.innerHTML = "";
                 target.types.forEach(type => {
-                    const pill = document.createElement('span');
-                    pill.className = 'info-pill'; pill.innerText = type;
-                    if (type === "일반 쓰레기통") pill.classList.add('pill-general');
-                    else if (type === "재활용 분리수거함 (혼합)") pill.classList.add('pill-mix');
-                    else if (type === "페트병 / 캔 전용함") pill.classList.add('pill-pet');
-                    else if (type === "종이 수거 전용 상자") pill.classList.add('pill-paper');
-                    else if (type === "쓰레기 무단 방치 구역 (경고)") pill.classList.add('pill-danger');
+                    const pill = document.createElement('span'); pill.className = 'info-pill'; pill.innerText = type;
+                    if (type === "일반 쓰레기통") pill.classList.add('pill-general'); else if (type === "재활용 분리수거함 (혼합)") pill.classList.add('pill-mix'); else if (type === "페트병 / 캔 전용함") pill.classList.add('pill-pet'); else if (type === "종이 수거 전용 상자") pill.classList.add('pill-paper'); else if (type === "쓰레기 무단 방치 구역 (경고)") pill.classList.add('pill-danger');
                     container.appendChild(pill);
                 });
-
-                document.getElementById('delete-btn').onclick = function() { deleteMarker(id); };
+                document.getElementById('delete-btn').onclick = function() { trashBins = trashBins.filter(bin => bin.id !== id); closeViewModal(); autoSaveToLocalStorage(); renderMarkers(); };
                 document.getElementById('view-modal').classList.add('show');
             }
         }
-
         function closeViewModal() { document.getElementById('view-modal').classList.remove('show'); }
-        function deleteMarker(id) { trashBins = trashBins.filter(bin => bin.id !== id); closeViewModal(); renderMarkers(); }
     </script>
 </body>
 </html>
