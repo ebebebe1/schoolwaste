@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SDHS 쓰레기통 위치 지도</title>
+    <title>우리 학교 쓰레기통 동적 지도 서비스</title>
     <style>
         :root {
             --primary-color: #2e7d32; --primary-light: #e8f5e9; --primary-dark: #1b5e20; --accent-color: #ff9100;
             --drag-color: #00e5ff; --zone-color: #2962ff; --zone-light: rgba(41, 98, 255, 0.05); --zone-hover: rgba(41, 98, 255, 0.2);
             --danger-color: #e53935; --danger-light: #ffebee; --text-dark: #333333; --bg-light: #f4f6f8; --white: #ffffff; --gray-border: #cccccc;
+            /* 🎨 Spot 등급별 색상 정의 */
+            --spot-green: #2e7d32; --spot-yellow: #fbc02d; --spot-red: #d32f2f;
         }
         body { font-family: 'Segoe UI', AppleSDGothicNeo-Regular, sans-serif; text-align: center; background-color: var(--bg-light); margin: 0; padding: 12px; color: var(--text-dark); user-select: none; -webkit-user-select: none; }
         header { margin-bottom: 15px; padding: 0 10px; }
@@ -26,27 +28,34 @@
         .btn-db-reset { background-color: #616161; color: white; }
         #map-wrapper { position: relative; width: 100%; max-width: 850px; margin: 0 auto; border-radius: 12px; box-shadow: 0 0 0 3px var(--white), 0 5px 20px rgba(0,0,0,0.1); overflow: hidden; background-color: #eaeaea; cursor: crosshair; touch-action: none; }
         #map-image { width: 100%; height: auto; display: block; -webkit-user-drag: none; user-select: none; }
-        .zone-highlight { position: absolute; border: 2px dashed rgba(41, 98, 255, 0.75); background-color: var(--zone-light); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; z-index: 5; -webkit-tap-highlight-color: transparent; }
-        .zone-highlight.hovered, .zone-highlight:hover { border: 2px solid var(--zone-color); background-color: var(--zone-hover); box-shadow: 0 0 10px rgba(41, 98, 255, 0.4); z-index: 10; }
-        .zone-highlight.danger-zone { border-color: rgba(229, 57, 53, 0.75); background-color: rgba(229, 57, 53, 0.03); }
-        .zone-highlight.danger-zone:hover { border-style: solid; border-color: var(--danger-color); background-color: rgba(229, 57, 53, 0.18); box-shadow: 0 0 10px rgba(229, 57, 53, 0.4); }
+        
+        /* 🗺️ 지도 마커 스타일 정의 */
+        .zone-highlight { position: absolute; border: 2px dashed var(--zone-color); background-color: var(--zone-light); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; z-index: 5; -webkit-tap-highlight-color: transparent; }
+        .zone-highlight:hover { box-shadow: 0 0 10px rgba(41, 98, 255, 0.4); z-index: 10; border-style: solid; }
+        
+        /* Spot 등급별 마커 오버라이드 색상 */
+        .zone-highlight.spot-green { border-color: var(--spot-green); background-color: rgba(46, 125, 50, 0.05); }
+        .zone-highlight.spot-green:hover { background-color: rgba(46, 125, 50, 0.15); box-shadow: 0 0 10px rgba(46, 125, 50, 0.4); }
+        .zone-highlight.spot-yellow { border-color: var(--spot-yellow); background-color: rgba(251, 192, 45, 0.05); }
+        .zone-highlight.spot-yellow:hover { background-color: rgba(251, 192, 45, 0.15); box-shadow: 0 0 10px rgba(251, 192, 45, 0.4); }
+        .zone-highlight.spot-red { border-color: var(--spot-red); background-color: rgba(211, 47, 47, 0.05); }
+        .zone-highlight.spot-red:hover { background-color: rgba(211, 47, 47, 0.15); box-shadow: 0 0 10px rgba(211, 47, 47, 0.4); }
+
         #drag-guide-box { position: absolute; border: 2px dashed var(--drag-color); background-color: rgba(0, 229, 255, 0.15); border-radius: 6px; display: none; z-index: 8; }
         
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 15px; box-sizing: border-box; }
         .modal-overlay.show { display: flex; }
         .modal-content { background: var(--white); padding: 20px; border-radius: 16px; text-align: left; max-width: 460px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.25); box-sizing: border-box; position: relative; }
         
-        /* 모달 타이틀 영역 레이아웃 (수정 버튼 배치용) */
         .modal-header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
         .modal-content h3 { margin: 0; color: var(--primary-dark); font-size: 17px; }
         
-        /* ✏️ 상세 창 상단 수정 아이콘 버튼 스타일 */
         .edit-inline-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: #555; padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px; transition: all 0.2s; font-weight: 600; }
         .edit-inline-btn:hover { background-color: #f0f0f0; color: var(--primary-color); }
         
         .form-group { margin-bottom: 14px; }
         .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #555; }
-        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1.5px solid var(--gray-border); border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; border: 1.5px solid var(--gray-border); border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: var(--white); }
         .error-message { color: var(--danger-color); font-size: 12px; font-weight: 600; margin-top: 5px; display: none; background-color: var(--danger-light); padding: 6px 10px; border-radius: 6px; }
         
         .checkbox-grid { display: flex; flex-direction: column; gap: 10px; background: #f8f9fa; padding: 14px; border-radius: 8px; border: 1px dashed #ccc; box-sizing: border-box; }
@@ -54,9 +63,17 @@
         .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; margin: 0; padding: 0; flex-shrink: 0; cursor: pointer; }
         .checkbox-item span { line-height: 18px; font-weight: 500; color: #333; }
 
+        .lock-option-box { background-color: #e8f5e9; border: 1px solid #a5d6a7; padding: 10px 14px; border-radius: 8px; margin-top: 12px; }
+
         .info-pill-container { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
         .info-pill { padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: bold; color: white; }
-        .pill-general { background-color: #2e7d32; } .pill-mix { background-color: #9c27b0; } .pill-pet { background-color: #1e88e5; } .pill-paper { background-color: #ff8f00; } .pill-danger { background-color: #e53935; }
+        .pill-general { background-color: #2e7d32; } .pill-mix { background-color: #9c27b0; } .pill-pet { background-color: #1e88e5; } .pill-paper { background-color: #ff8f00; } .pill-danger { background-color: #e53935; } .pill-lock { background-color: #37474f; }
+        
+        /* 🎨 Spot 전용 알약 배지 스타일 */
+        .pill-spot-green { background-color: var(--spot-green); }
+        .pill-spot-yellow { background-color: #f57f17; color: #fff; }
+        .pill-spot-red { background-color: var(--spot-red); }
+
         .modal-buttons { display: flex; gap: 8px; margin-top: 20px; }
         .modal-btn { flex: 1; padding: 11px; font-size: 14px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; text-align: center; }
         .btn-cancel { background-color: #eeeeee; color: #666; } .btn-save { background-color: var(--primary-color); color: var(--white); } .btn-delete { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
@@ -79,14 +96,14 @@
 </head>
 <body>
     <header>
-        <h2>🧹 ㅅㅏㅇㄷㅏㅇㄱㅗ 쓰레기통 위치 지도 📍</h2>
+        <h2>🧹 교내 쓰레기통 참여형 지도 📍</h2>
         <p class="subtitle">학급 특색 활동: 분리수거 및 무단 투기 실태 시각화</p>
     </header>
     <div class="guide-box">
         <span class="guide-title">💡 1초만에 마스터하는 지도 사용법!</span>
         1. 원하는 층수 버튼을 누르고, 지도 도면 위를 <strong>손가락이나 마우스로 드래그(네모 그리기)</strong> 하세요.<br>
-        2. 등록 창이 뜨면 구체적인 <strong>장소 이름</strong>을 적고, 배치된 <strong>쓰레기통 종류</strong>를 체크해 줍니다.<br>
-        3. 저장하면 지도가 완성됩니다! (입력한 정보는 기기에 자동 저장되어 창을 닫아도 안전하게 유지됩니다)
+        2. 등록 창이 뜨면 구체적인 <strong>장소 이름</strong>을 적고, 배치된 <strong>쓰레기통 종류</strong>와 <strong>분리수거 등급(Spot)</strong>을 설정해 줍니다.<br>
+        3. 저장하면 상태에 맞춰 색상별 구역(Green, Yellow, Red) 지도가 완성됩니다!
     </div>
     <div class="control-panel">
         <div class="btn-group">
@@ -111,6 +128,16 @@
                 <h3 id="add-modal-title">📍 새 쓰레기 수거 구역 등록</h3>
             </div>
             <div class="form-group"><label for="input-location">장소 이름</label><input type="text" id="input-location" placeholder="예: 2층 무용실 앞 복도"></div>
+            
+            <div class="form-group">
+                <label for="input-spot-level">🗑️ 분리수거 및 청결도 등급 (Spot)</label>
+                <select id="input-spot-level">
+                    <option value="green">🟢 Green Spot (모범 구역 - 분리수거 깨끗함)</option>
+                    <option value="yellow" selected>🟡 Yellow Spot (보통 구역 - 분리수거 및 관리 필요)</option>
+                    <option value="red">🔴 Red Spot (취약 구역 - 무단 투기 심각 및 엉망)</option>
+                </select>
+            </div>
+
             <div class="form-group">
                 <label>배치된 쓰레기통 목록</label>
                 <div class="checkbox-grid">
@@ -122,6 +149,14 @@
                 </div>
             </div>
             <div class="form-group"><label for="input-desc">현황 기록 메모</label><textarea id="input-desc" rows="2" placeholder="세부 특징을 적어주세요."></textarea></div>
+            
+            <div class="form-group lock-option-box">
+                <label class="checkbox-item" style="color: var(--primary-dark); font-weight: bold;">
+                    <input type="checkbox" id="input-is-locked">
+                    <span>🔒 이 구역 비밀번호 잠금 (타인 삭제 금지)</span>
+                </label>
+            </div>
+
             <div id="add-error-msg" class="error-message"></div>
             <div class="modal-buttons"><button class="modal-btn btn-cancel" onclick="closeAddModal()">취소</button><button class="modal-btn btn-save" id="btn-save-main" onclick="saveMarkerData()">구역 저장</button></div>
         </div>
@@ -135,9 +170,9 @@
             </div>
             <div style="font-size: 13.5px; line-height: 1.6;">
                 <p><span class="info-label">📍 위치:</span> <span id="view-location" style="font-weight: bold;"></span></p>
-                <p style="margin-bottom: 2px;"><span class="info-label">🗑️ 종류:</span></p>
+                <p style="margin-bottom: 2px;"><span class="info-label">📋 상태/종류:</span></p>
                 <div id="view-pills" class="info-pill-container"></div>
-                <p><span class="info-label">📋 보고메모:</span> <span id="view-desc" style="color:#555;"></span></p>
+                <p><span class="info-label">📝 보고메모:</span> <span id="view-desc" style="color:#555;"></span></p>
             </div>
             <div class="modal-buttons"><button class="modal-btn btn-delete" id="delete-btn">이 구역 삭제</button><button class="modal-btn btn-cancel" onclick="closeViewModal()" style="background: var(--primary-color); color: white;">닫기</button></div>
         </div>
@@ -146,17 +181,20 @@
     <script>
         let currentFloor = "1층", currentSelectedMarkerId = null, isDragging = false, isEditMode = false;
         let dragStartCoords = { x: 0, y: 0 }, dragEndCoords = { x: 0, y: 0 }, activeSavedCoords = { x: 0, y: 0, width: 0, height: 0 }, trashBins = [];
-        const ADMIN_PASSWORD = "1234";
+        const MASTER_PASSWORD = "0701"; // 수정, 삭제, 전체 초기화 통합 비밀번호
+
         window.onload = function() { initInteractionEvents(); loadFromLocalStorage(); }
         function autoSaveToLocalStorage() { localStorage.setItem('school_trash_data_permanent', JSON.stringify(trashBins)); }
         function loadFromLocalStorage() { const savedData = localStorage.getItem('school_trash_data_permanent'); if (savedData) { trashBins = JSON.parse(savedData); renderMarkers(); } }
+        
         function resetLocalStorageSecurely() {
-            const inputPw = prompt("🔒 전체 초기화 보안 잠금\n관리자 비밀번호를 입력해야 모든 데이터가 리셋됩니다:");
+            const inputPw = prompt("🔒 지도 전체 초기화 잠금\n통합 비밀번호를 입력해야 모든 데이터가 리셋됩니다:");
             if (inputPw === null) return;
-            if (inputPw === ADMIN_PASSWORD) {
-                if (confirm("정말로 모든 층의 마킹 내역을 초기화하시겠습니까?")) { localStorage.removeItem('school_trash_data_permanent'); trashBins = []; renderMarkers(); alert("모든 데이터가 깨끗하게 리셋되었습니다."); }
-            } else { alert("❌ 비밀번호가 틀렸습니다. 관리자만 초기화할 수 있습니다."); }
+            if (inputPw === MASTER_PASSWORD) {
+                if (confirm("정말로 모든 층의 수거 구역 데이터를 공장초기화 하시겠습니까?")) { localStorage.removeItem('school_trash_data_permanent'); trashBins = []; renderMarkers(); alert("모든 데이터가 깨끗하게 리셋되었습니다."); }
+            } else { alert("❌ 비밀번호가 올바르지 않습니다."); }
         }
+        
         function changeFloor(floor) {
             currentFloor = floor; document.getElementById('btn-f1').classList.remove('active'); document.getElementById('btn-f2').classList.remove('active'); document.getElementById('btn-f3').classList.remove('active'); document.getElementById('btn-f4').classList.remove('active');
             const mapImage = document.getElementById('map-image');
@@ -166,17 +204,21 @@
             else if (floor === '4층') { document.getElementById('btn-f4').classList.add('active'); mapImage.src = 'floor4.jpg'; }
             renderMarkers();
         }
+        
         function renderMarkers() {
             const container = document.getElementById('marker-container'); container.innerHTML = "";
             trashBins.filter(bin => bin.floorName === currentFloor).forEach(bin => {
-                const zone = document.createElement('div'); zone.className = 'zone-highlight';
+                const zone = document.createElement('div'); 
+                // 기본 스타일 클래스에 Spot 등급별 클래스 결합
+                zone.className = `zone-highlight spot-${bin.spotLevel || 'yellow'}`;
                 zone.style.left = bin.x + "%"; zone.style.top = bin.y + "%"; zone.style.width = bin.width + "%"; zone.style.height = bin.height + "%";
-                if (bin.types.includes("쓰레기 무단 방치 구역 (경고)")) zone.classList.add('danger-zone');
+                
                 const openModalHandler = (e) => { e.stopPropagation(); e.preventDefault(); openViewModal(bin.id); };
                 zone.addEventListener('click', openModalHandler); zone.addEventListener('touchend', openModalHandler);
                 container.appendChild(zone);
             });
         }
+        
         function initInteractionEvents() {
             const wrapper = document.getElementById('map-wrapper');
             wrapper.addEventListener('mousedown', (e) => handleDragStart(e.clientX, e.clientY, e.target));
@@ -186,18 +228,21 @@
             window.addEventListener('touchmove', (e) => { if (!isDragging) return; if (e.cancelable) e.preventDefault(); handleDragMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
             window.addEventListener('touchend', (e) => { if (isDragging) handleDragEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY); });
         }
+        
         function handleDragStart(clientX, clientY, target) {
             if (target.closest('.zone-highlight')) return; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
             isDragging = true; dragStartCoords.x = clientX - rect.left; dragStartCoords.y = clientY - rect.top;
             dragEndCoords.x = dragStartCoords.x; dragEndCoords.y = dragStartCoords.y;
             const guide = document.getElementById('drag-guide-box'); guide.style.left = dragStartCoords.x + "px"; guide.style.top = dragStartCoords.y + "px"; guide.style.width = "0px"; guide.style.height = "0px"; guide.style.display = "block";
         }
+        
         function handleDragMove(clientX, clientY) {
             if (!isDragging) return; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
             dragEndCoords.x = Math.max(0, Math.min(clientX - rect.left, rect.width)); dragEndCoords.y = Math.max(0, Math.min(clientY - rect.top, rect.height));
             const guide = document.getElementById('drag-guide-box'), w = Math.abs(dragEndCoords.x - dragStartCoords.x), h = Math.abs(dragEndCoords.y - dragStartCoords.y);
             guide.style.left = Math.min(dragStartCoords.x, dragEndCoords.x) + "px"; guide.style.top = Math.min(dragStartCoords.y, dragEndCoords.y) + "px"; guide.style.width = w + "px"; guide.style.height = h + "px";
         }
+        
         function handleDragEnd(clientX, clientY) {
             if (!isDragging) return; isDragging = false; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
             document.getElementById('drag-guide-box').style.display = "none";
@@ -211,6 +256,7 @@
             isEditMode = false;
             openAddModal();
         }
+        
         function openAddModal() { 
             document.getElementById('add-error-msg').style.display = 'none'; 
             if (isEditMode) {
@@ -221,6 +267,8 @@
                 document.getElementById('btn-save-main').innerText = "구역 저장";
                 document.getElementById('input-location').value = ""; 
                 document.getElementById('input-desc').value = ""; 
+                document.getElementById('input-spot-level').value = "yellow";
+                document.getElementById('input-is-locked').checked = false;
                 document.querySelectorAll('input[name="bin-types"]').forEach(cb => cb.checked = false);
             }
             document.getElementById('add-modal').classList.add('show'); 
@@ -229,13 +277,16 @@
         
         function saveMarkerData() {
             const loc = document.getElementById('input-location').value.trim(), desc = document.getElementById('input-desc').value.trim(), checked = document.querySelectorAll('input[name="bin-types"]:checked'), types = Array.from(checked).map(cb => cb.value);
+            const isLocked = document.getElementById('input-is-locked').checked;
+            const spotLevel = document.getElementById('input-spot-level').value;
+            
             if (!loc || types.length === 0) { const err = document.getElementById('add-error-msg'); err.innerText = "이름과 종류를 입력하세요."; err.style.display = 'block'; return; }
             
             if (isEditMode) {
                 const target = trashBins.find(bin => bin.id === currentSelectedMarkerId);
-                if (target) { target.location = loc; target.types = types; target.desc = desc || "세부 기록 없음."; }
+                if (target) { target.location = loc; target.types = types; target.desc = desc || "세부 기록 없음."; target.isLocked = isLocked; target.spotLevel = spotLevel; }
             } else {
-                trashBins.push({ id: Date.now(), floorName: currentFloor, x: activeSavedCoords.x, y: activeSavedCoords.y, width: activeSavedCoords.width, height: activeSavedCoords.height, location: loc, types: types, desc: desc || "세부 기록 없음." });
+                trashBins.push({ id: Date.now(), floorName: currentFloor, x: activeSavedCoords.x, y: activeSavedCoords.y, width: activeSavedCoords.width, height: activeSavedCoords.height, location: loc, types: types, desc: desc || "세부 기록 없음.", isLocked: isLocked, spotLevel: spotLevel });
             }
             closeAddModal(); autoSaveToLocalStorage(); renderMarkers();
         }
@@ -245,24 +296,53 @@
             if (target) {
                 document.getElementById('view-title').innerText = `${target.floorName} 리포트`; document.getElementById('view-location').innerText = target.location; document.getElementById('view-desc').innerText = target.desc;
                 const container = document.getElementById('view-pills'); container.innerHTML = "";
+                
+                if (target.isLocked) {
+                    const lockPill = document.createElement('span'); lockPill.className = 'info-pill pill-lock'; lockPill.innerText = "🔒 보안 잠금";
+                    container.appendChild(lockPill);
+                }
+
+                // 🎨 Spot 상태를 알려주는 메인 배지 추가 생성
+                const spotPill = document.createElement('span');
+                spotPill.className = `info-pill pill-spot-${target.spotLevel || 'yellow'}`;
+                if (target.spotLevel === 'green') spotPill.innerText = "🟢 Green Spot (깨끗)";
+                else if (target.spotLevel === 'red') spotPill.innerText = "🔴 Red Spot (심각)";
+                else spotPill.innerText = "🟡 Yellow Spot (관리요망)";
+                container.appendChild(spotPill);
+
                 target.types.forEach(type => {
                     const pill = document.createElement('span'); pill.className = 'info-pill'; pill.innerText = type;
                     if (type === "일반 쓰레기통") pill.classList.add('pill-general'); else if (type === "재활용 분리수거함 (혼합)") pill.classList.add('pill-mix'); else if (type === "페트병 / 캔 전용함") pill.classList.add('pill-pet'); else if (type === "종이 수거 전용 상자") pill.classList.add('pill-paper'); else if (type === "쓰레기 무단 방치 구역 (경고)") pill.classList.add('pill-danger');
                     container.appendChild(pill);
                 });
-                document.getElementById('delete-btn').onclick = function() { trashBins = trashBins.filter(bin => bin.id !== id); closeViewModal(); autoSaveToLocalStorage(); renderMarkers(); };
+                
+                document.getElementById('delete-btn').onclick = function() {
+                    if (target.isLocked) {
+                        const pw = prompt("🔒 이 구역은 보안 잠금이 설정되어 있습니다.\n비밀번호를 입력하세요:");
+                        if (pw !== MASTER_PASSWORD) { alert("❌ 비밀번호가 올바르지 않습니다. 삭제가 거부되었습니다."); return; }
+                    }
+                    if (confirm("정말로 이 구역을 삭제하시겠습니까?")) {
+                        trashBins = trashBins.filter(bin => bin.id !== id); closeViewModal(); autoSaveToLocalStorage(); renderMarkers();
+                    }
+                };
                 document.getElementById('view-modal').classList.add('show');
             }
         }
         function closeViewModal() { document.getElementById('view-modal').classList.remove('show'); }
         
-        /* 🔄 리포트 모달에서 수정 모드로 전환하는 함수 */
         function switchToEditMode() {
             const target = trashBins.find(bin => bin.id === currentSelectedMarkerId);
             if (target) {
+                if (target.isLocked) {
+                    const pw = prompt("🔒 이 구역은 보안 잠금이 설정되어 있습니다.\n수정하려면 비밀번호를 입력하세요:");
+                    if (pw !== MASTER_PASSWORD) { alert("❌ 비밀번호가 올바르지 않습니다. 수정이 거부되었습니다."); return; }
+                }
+                
                 isEditMode = true; closeViewModal();
                 document.getElementById('input-location').value = target.location;
                 document.getElementById('input-desc').value = target.desc === "세부 기록 없음." ? "" : target.desc;
+                document.getElementById('input-is-locked').checked = target.isLocked || false;
+                document.getElementById('input-spot-level').value = target.spotLevel || "yellow";
                 document.querySelectorAll('input[name="bin-types"]').forEach(cb => { cb.checked = target.types.includes(cb.value); });
                 openAddModal();
             }
