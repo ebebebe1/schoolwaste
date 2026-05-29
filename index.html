@@ -212,4 +212,144 @@
                 // spotLevel 값이 none이거나 없으면 클래스를 추가하지 않아 기본 파란색 적용
                 const level = bin.spotLevel || 'none';
                 zone.className = `zone-highlight ${level !== 'none' ? 'spot-' + level : ''}`;
-                zone.style.left = bin.x + "%"; zone.style.top = bin.y + "%"; zone.style.width = bin.width + "%"; zone.style.height
+                zone.style.left = bin.x + "%"; zone.style.top = bin.y + "%"; zone.style.width = bin.width + "%"; zone.style.height = bin.height + "%";
+                
+                const openModalHandler = (e) => { e.stopPropagation(); e.preventDefault(); openViewModal(bin.id); };
+                zone.addEventListener('click', openModalHandler); zone.addEventListener('touchend', openModalHandler);
+                container.appendChild(zone);
+            });
+        }
+        
+        function initInteractionEvents() {
+            const wrapper = document.getElementById('map-wrapper');
+            wrapper.addEventListener('mousedown', (e) => handleDragStart(e.clientX, e.clientY, e.target));
+            window.addEventListener('mousemove', (e) => handleDragMove(e.clientX, e.clientY));
+            window.addEventListener('mouseup', (e) => handleDragEnd(e.clientX, e.clientY));
+            wrapper.addEventListener('touchstart', (e) => handleDragStart(e.touches[0].clientX, e.touches[0].clientY, e.target), { passive: false });
+            window.addEventListener('touchmove', (e) => { if (!isDragging) return; if (e.cancelable) e.preventDefault(); handleDragMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+            window.addEventListener('touchend', (e) => { if (isDragging) handleDragEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY); });
+        }
+        
+        function handleDragStart(clientX, clientY, target) {
+            if (target.closest('.zone-highlight')) return; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
+            isDragging = true; dragStartCoords.x = clientX - rect.left; dragStartCoords.y = clientY - rect.top;
+            dragEndCoords.x = dragStartCoords.x; dragEndCoords.y = dragStartCoords.y;
+            const guide = document.getElementById('drag-guide-box'); guide.style.left = dragStartCoords.x + "px"; guide.style.top = dragStartCoords.y + "px"; guide.style.width = "0px"; guide.style.height = "0px"; guide.style.display = "block";
+        }
+        
+        function handleDragMove(clientX, clientY) {
+            if (!isDragging) return; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
+            dragEndCoords.x = Math.max(0, Math.min(clientX - rect.left, rect.width)); dragEndCoords.y = Math.max(0, Math.min(clientY - rect.top, rect.height));
+            const guide = document.getElementById('drag-guide-box'), w = Math.abs(dragEndCoords.x - dragStartCoords.x), h = Math.abs(dragEndCoords.y - dragStartCoords.y);
+            guide.style.left = Math.min(dragStartCoords.x, dragEndCoords.x) + "px"; guide.style.top = Math.min(dragStartCoords.y, dragEndCoords.y) + "px"; guide.style.width = w + "px"; guide.style.height = h + "px";
+        }
+        
+        function handleDragEnd(clientX, clientY) {
+            if (!isDragging) return; isDragging = false; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
+            document.getElementById('drag-guide-box').style.display = "none";
+            const wPx = Math.abs(dragEndCoords.x - dragStartCoords.x), hPx = Math.abs(dragEndCoords.y - dragStartCoords.y);
+            if (wPx < 10 || hPx < 10) {
+                let cx = Math.max(0, Math.min(clientX - rect.left, rect.width)), cy = Math.max(0, Math.min(clientY - rect.top, rect.height));
+                activeSavedCoords = { x: parseFloat(((cx / rect.width) * 100 - 5).toFixed(1)), y: parseFloat(((cy / rect.height) * 100 - 4).toFixed(1)), width: 10, height: 8 };
+            } else {
+                activeSavedCoords = { x: parseFloat(((Math.min(dragStartCoords.x, dragEndCoords.x) / rect.width) * 100).toFixed(1)), y: parseFloat(((Math.min(dragStartCoords.y, dragEndCoords.y) / rect.height) * 100).toFixed(1)), width: parseFloat(((wPx / rect.width) * 100).toFixed(1)), height: parseFloat(((hPx / rect.height) * 100).toFixed(1)) };
+            }
+            isEditMode = false;
+            openAddModal();
+        }
+        
+        function openAddModal() { 
+            document.getElementById('add-error-msg').style.display = 'none'; 
+            if (isEditMode) {
+                document.getElementById('add-modal-title').innerText = "✏️ 수거 구역 정보 수정";
+                document.getElementById('btn-save-main').innerText = "수정 완료";
+            } else {
+                document.getElementById('add-modal-title').innerText = "📍 새 쓰레기 수거 구역 등록";
+                document.getElementById('btn-save-main').innerText = "구역 저장";
+                document.getElementById('input-location').value = ""; 
+                document.getElementById('input-desc').value = ""; 
+                document.getElementById('input-spot-level').value = "none";
+                document.getElementById('input-is-locked').checked = false;
+                document.querySelectorAll('input[name="bin-types"]').forEach(cb => cb.checked = false);
+            }
+            document.getElementById('add-modal').classList.add('show'); 
+        }
+        function closeAddModal() { document.getElementById('add-modal').classList.remove('show'); isEditMode = false; }
+        
+        function saveMarkerData() {
+            const loc = document.getElementById('input-location').value.trim(), desc = document.getElementById('input-desc').value.trim(), checked = document.querySelectorAll('input[name="bin-types"]:checked'), types = Array.from(checked).map(cb => cb.value);
+            const isLocked = document.getElementById('input-is-locked').checked;
+            const spotLevel = document.getElementById('input-spot-level').value;
+            
+            if (!loc || types.length === 0) { const err = document.getElementById('add-error-msg'); err.innerText = "이름과 종류를 입력하세요."; err.style.display = 'block'; return; }
+            
+            if (isEditMode) {
+                const target = trashBins.find(bin => bin.id === currentSelectedMarkerId);
+                if (target) { target.location = loc; target.types = types; target.desc = desc || "세부 기록 없음."; target.isLocked = isLocked; target.spotLevel = spotLevel; }
+            } else {
+                trashBins.push({ id: Date.now(), floorName: currentFloor, x: activeSavedCoords.x, y: activeSavedCoords.y, width: activeSavedCoords.width, height: activeSavedCoords.height, location: loc, types: types, desc: desc || "세부 기록 없음.", isLocked: isLocked, spotLevel: spotLevel });
+            }
+            closeAddModal(); autoSaveToLocalStorage(); renderMarkers();
+        }
+        
+        function openViewModal(id) {
+            currentSelectedMarkerId = id; const target = trashBins.find(bin => bin.id === id);
+            if (target) {
+                document.getElementById('view-title').innerText = `${target.floorName} 리포트`; document.getElementById('view-location').innerText = target.location; document.getElementById('view-desc').innerText = target.desc;
+                const container = document.getElementById('view-pills'); container.innerHTML = "";
+                
+                if (target.isLocked) {
+                    const lockPill = document.createElement('span'); lockPill.className = 'info-pill pill-lock'; lockPill.innerText = "🔒 보안 잠금";
+                    container.appendChild(lockPill);
+                }
+
+                const spotLevel = target.spotLevel || 'none';
+                if (spotLevel !== 'none') {
+                    const spotPill = document.createElement('span');
+                    spotPill.className = `info-pill pill-spot-${spotLevel}`;
+                    if (spotLevel === 'green') spotPill.innerText = "🟢 Green Spot";
+                    else if (spotLevel === 'red') spotPill.innerText = "🔴 Red Spot";
+                    else spotPill.innerText = "🟡 Yellow Spot";
+                    container.appendChild(spotPill);
+                }
+
+                target.types.forEach(type => {
+                    const pill = document.createElement('span'); pill.className = 'info-pill'; pill.innerText = type;
+                    if (type === "일반 쓰레기통") pill.classList.add('pill-general'); else if (type === "재활용 분리수거함 (혼합)") pill.classList.add('pill-mix'); else if (type === "페트병 / 캔 전용함") pill.classList.add('pill-pet'); else if (type === "종이 수거 전용 상자") pill.classList.add('pill-paper'); else if (type === "쓰레기 무단 방치 구역 (경고)") pill.classList.add('pill-danger');
+                    container.appendChild(pill);
+                });
+                
+                document.getElementById('delete-btn').onclick = function() {
+                    if (target.isLocked) {
+                        const pw = prompt("🔒 이 구역은 보안 잠금이 설정되어 있습니다.\n비밀번호를 입력하세요:");
+                        if (pw !== MASTER_PASSWORD) { alert("❌ 비밀번호가 올바르지 않습니다. 삭제가 거부되었습니다."); return; }
+                    }
+                    if (confirm("정말로 이 구역을 삭제하시겠습니까?")) {
+                        trashBins = trashBins.filter(bin => bin.id !== id); closeViewModal(); autoSaveToLocalStorage(); renderMarkers();
+                    }
+                };
+                document.getElementById('view-modal').classList.add('show');
+            }
+        }
+        function closeViewModal() { document.getElementById('view-modal').classList.remove('show'); }
+        
+        function switchToEditMode() {
+            const target = trashBins.find(bin => bin.id === currentSelectedMarkerId);
+            if (target) {
+                if (target.isLocked) {
+                    const pw = prompt("🔒 이 구역은 보안 잠금이 설정되어 있습니다.\n수정하려면 비밀번호를 입력하세요:");
+                    if (pw !== MASTER_PASSWORD) { alert("❌ 비밀번호가 올바르지 않습니다. 수정이 거부되었습니다."); return; }
+                }
+                
+                isEditMode = true; closeViewModal();
+                document.getElementById('input-location').value = target.location;
+                document.getElementById('input-desc').value = target.desc === "세부 기록 없음." ? "" : target.desc;
+                document.getElementById('input-is-locked').checked = target.isLocked || false;
+                document.getElementById('input-spot-level').value = target.spotLevel || "none";
+                document.querySelectorAll('input[name="bin-types"]').forEach(cb => { cb.checked = target.types.includes(cb.value); });
+                openAddModal();
+            }
+        }
+    </script>
+</body>
+</html
