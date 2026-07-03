@@ -46,11 +46,16 @@
         #map-wrapper { position: relative; width: 100%; max-width: 850px; margin: 0 auto; border-radius: 12px; box-shadow: 0 0 0 3px var(--white), 0 5px 20px rgba(0,0,0,0.1); overflow: hidden; background-color: #eaeaea; cursor: crosshair; touch-action: none; }
         #map-image { width: 100%; height: auto; display: block; -webkit-user-drag: none; user-select: none; }
         
-        .zone-highlight { position: absolute; border: 2px dashed var(--zone-color); background-color: var(--zone-light); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; z-index: 5; -webkit-tap-highlight-color: transparent; }
-        .zone-highlight:hover { background-color: var(--zone-hover); box-shadow: 0 0 10px rgba(41, 98, 255, 0.4); z-index: 10; border-style: solid; }
-        
-        .zone-highlight.spot-green { border-color: var(--spot-green); background-color: rgba(46, 125, 50, 0.05); }
-        .zone-highlight.spot-green:hover { background-color: rgba(46, 125, 50, 0.15); box-shadow: 0 0 10px rgba(46, 125, 50, 0.4); }
+        .zone-highlight.spot-green { 
+            border: 3px solid #ccff00; /* 테두리를 조금 더 두껍게 */
+            background-color: rgba(204, 255, 0, 0.15); 
+            box-shadow: 0 0 8px rgba(204, 255, 0, 0.5);
+        }
+        .zone-highlight.spot-green:hover { 
+            background-color: rgba(204, 255, 0, 0.3); 
+            box-shadow: 0 0 15px #ccff00; 
+        }
+    
         .zone-highlight.spot-yellow { border-color: var(--spot-yellow); background-color: rgba(251, 192, 45, 0.05); }
         .zone-highlight.spot-yellow:hover { background-color: rgba(251, 192, 45, 0.15); box-shadow: 0 0 10px rgba(251, 192, 45, 0.4); }
         .zone-highlight.spot-red { border-color: var(--spot-red); background-color: rgba(211, 47, 47, 0.05); }
