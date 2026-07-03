@@ -46,21 +46,17 @@
         #map-wrapper { position: relative; width: 100%; max-width: 850px; margin: 0 auto; border-radius: 12px; box-shadow: 0 0 0 3px var(--white), 0 5px 20px rgba(0,0,0,0.1); overflow: hidden; background-color: #eaeaea; cursor: crosshair; touch-action: none; }
         #map-image { width: 100%; height: auto; display: block; -webkit-user-drag: none; user-select: none; }
         
-        .zone-highlight.spot-green { 
-            border: 3px solid #ccff00; /* 테두리를 조금 더 두껍게 */
-            background-color: rgba(204, 255, 0, 0.15); 
-            box-shadow: 0 0 8px rgba(204, 255, 0, 0.5);
-        }
-        .zone-highlight.spot-green:hover { 
-            background-color: rgba(204, 255, 0, 0.3); 
-            box-shadow: 0 0 15px #ccff00; 
-        }
-    
+        .zone-highlight { position: absolute; border: 2px dashed var(--zone-color); background-color: var(--zone-light); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; z-index: 5; -webkit-tap-highlight-color: transparent; }
+        .zone-highlight:hover { background-color: var(--zone-hover); box-shadow: 0 0 10px rgba(41, 98, 255, 0.4); z-index: 10; border-style: solid; }
+        
+        .zone-highlight.spot-green { border-color: var(--spot-green); background-color: rgba(46, 125, 50, 0.05); }
+        .zone-highlight.spot-green:hover { background-color: rgba(46, 125, 50, 0.15); box-shadow: 0 0 10px rgba(46, 125, 50, 0.4); }
         .zone-highlight.spot-yellow { border-color: var(--spot-yellow); background-color: rgba(251, 192, 45, 0.05); }
         .zone-highlight.spot-yellow:hover { background-color: rgba(251, 192, 45, 0.15); box-shadow: 0 0 10px rgba(251, 192, 45, 0.4); }
         .zone-highlight.spot-red { border-color: var(--spot-red); background-color: rgba(211, 47, 47, 0.05); }
         .zone-highlight.spot-red:hover { background-color: rgba(211, 47, 47, 0.15); box-shadow: 0 0 10px rgba(211, 47, 47, 0.4); }
 
+        /* 🔴 선택 삭제 모드에서 선택된 마커 스타일 */
         .zone-highlight.selected-for-delete { border: 3.5px solid var(--danger-color) !important; background-color: rgba(229, 57, 53, 0.3) !important; z-index: 15 !important; box-shadow: 0 0 12px var(--danger-color); }
 
         #drag-guide-box { position: absolute; border: 2px dashed var(--drag-color); background-color: rgba(0, 229, 255, 0.15); border-radius: 6px; display: none; z-index: 8; }
@@ -217,9 +213,8 @@
     </div>
     
     <script>
-        // ⚠️ 아래 두 줄(195~196번 줄)을 본인 Supabase 정보로 수정해야 합니다!
-        const SUPABASE_URL = "https://aswipaalqeiforwdgltg.supabase.co";
-        const SUPABASE_ANON_KEY = "sb_publishable_41VovqaOxhgqDpXBUamLxA_8mscN_Xq";
+        const SUPABASE_URL = "YOUR_SUPABASE_URL";
+        const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
         
         let supabaseClient = null;
         if(SUPABASE_URL !== "YOUR_SUPABASE_URL") {
@@ -231,6 +226,7 @@
         let isOnlineMode = false, supabaseSubscription = null;
         const MASTER_PASSWORD = "0701";
 
+        // 선택 삭제 모드 관련 변수
         let isBulkDeleteMode = false;
         let selectedMarkerIds = [];
 
@@ -263,7 +259,7 @@
                 if(supabaseSubscription) supabaseClient.channel('schema-db-changes').unsubscribe();
                 loadFromLocalStorage();
             }
-            if(isBulkDeleteMode) toggleBulkDeleteMode();
+            if(isBulkDeleteMode) toggleBulkDeleteMode(); // 모드 리셋
         }
 
         async function fetchFromSupabase() {
@@ -303,10 +299,11 @@
             }
         }
 
+        // 🔘 선택 삭제 모드 켜고 끄기 함수
         function toggleBulkDeleteMode() {
             const btn = document.getElementById('btn-bulk-delete-mode');
             isBulkDeleteMode = !isBulkDeleteMode;
-            selectedMarkerIds = [];
+            selectedMarkerIds = []; // 선택 내역 리셋
 
             if (isBulkDeleteMode) {
                 btn.classList.add('active');
@@ -319,6 +316,7 @@
             renderMarkers();
         }
 
+        // 🗑️ 진짜 일괄 삭제 진행하는 함수
         async function executionBulkDelete() {
             if(selectedMarkerIds.length === 0) { alert("선택된 구역이 없습니다."); return; }
             
@@ -334,7 +332,7 @@
                     renderMarkers();
                 }
                 alert("선택한 구역들이 깨끗하게 일괄 삭제되었습니다.");
-                toggleBulkDeleteMode();
+                toggleBulkDeleteMode(); // 모드 종료
             }
         }
         
@@ -354,6 +352,7 @@
                 const zone = document.createElement('div'); 
                 const level = bin.spotLevel || 'none';
                 
+                // 선택 삭제 모드에서 선택 유무에 따라 클래스 부여
                 const isSelected = selectedMarkerIds.includes(bin.id);
                 zone.className = `zone-highlight ${level !== 'none' ? 'spot-' + level : ''} ${isSelected ? 'selected-for-delete' : ''}`;
                 zone.style.left = bin.x + "%"; zone.style.top = bin.y + "%"; zone.style.width = bin.width + "%"; zone.style.height = bin.height + "%";
@@ -361,20 +360,22 @@
                 const clickHandler = (e) => { 
                     e.stopPropagation(); e.preventDefault(); 
                     if(isBulkDeleteMode) {
+                        // 선택 토글 기능
                         if(selectedMarkerIds.includes(bin.id)) {
                             selectedMarkerIds = selectedMarkerIds.filter(id => id !== bin.id);
                         } else {
                             selectedMarkerIds.push(bin.id);
                         }
+                        // 버튼 내부 텍스트 갱신
                         const btn = document.getElementById('btn-bulk-delete-mode');
                         if(selectedMarkerIds.length > 0) {
                             btn.innerText = `🗑️ ${selectedMarkerIds.length}개 구역 삭제하기`;
-                            btn.onclick = executionBulkDelete;
+                            btn.onclick = executionBulkDelete; // 누르면 일괄 삭제 실행
                         } else {
                             btn.innerText = "🗑️ 0개 구역 삭제하기";
-                            btn.onclick = toggleBulkDeleteMode;
+                            btn.onclick = toggleBulkDeleteMode; // 0개일땐 누르면 취소/모드 오프
                         }
-                        renderMarkers();
+                        renderMarkers(); // 테두리 표시 갱신
                     } else {
                         openViewModal(bin.id); 
                     }
@@ -410,39 +411,17 @@
         }
         
         function handleDragEnd(clientX, clientY) {
-    if (!isDragging) return; isDragging = false; 
-    
-    const wrapper = document.getElementById('map-wrapper');
-    const rect = wrapper.getBoundingClientRect();
-    const mapImg = document.getElementById('map-image');
-    
-    // 💡 이미지의 현재 화면상 실제 렌더링된 크기를 구합니다.
-    const currentImgWidth = mapImg.clientWidth;
-    const currentImgHeight = mapImg.clientHeight;
-    
-    document.getElementById('drag-guide-box').style.display = "none";
-    const wPx = Math.abs(dragEndCoords.x - dragStartCoords.x), hPx = Math.abs(dragEndCoords.y - dragStartCoords.y);
-    
-    // 이미지 영역 기준 맞춤 계산
-    if (wPx < 10 || hPx < 10) {
-        let cx = Math.max(0, Math.min(clientX - rect.left, currentImgWidth));
-        let cy = Math.max(0, Math.min(clientY - rect.top, currentImgHeight));
-        activeSavedCoords = { 
-            x: parseFloat(((cx / currentImgWidth) * 100 - 5).toFixed(1)), 
-            y: parseFloat(((cy / currentImgHeight) * 100 - 4).toFixed(1)), 
-            width: 10, 
-            height: 8 
-        };
-    } else {
-        activeSavedCoords = { 
-            x: parseFloat(((Math.min(dragStartCoords.x, dragEndCoords.x) / currentImgWidth) * 100).toFixed(1)), 
-            y: parseFloat(((Math.min(dragStartCoords.y, dragEndCoords.y) / currentImgHeight) * 100).toFixed(1)), 
-            width: parseFloat(((wPx / currentImgWidth) * 100).toFixed(1)), 
-            height: parseFloat(((hPx / currentImgHeight) * 100).toFixed(1)) 
-        };
-    }
-    isEditMode = false; openAddModal();
-}
+            if (!isDragging) return; isDragging = false; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
+            document.getElementById('drag-guide-box').style.display = "none";
+            const wPx = Math.abs(dragEndCoords.x - dragStartCoords.x), hPx = Math.abs(dragEndCoords.y - dragStartCoords.y);
+            if (wPx < 10 || hPx < 10) {
+                let cx = Math.max(0, Math.min(clientX - rect.left, rect.width)), cy = Math.max(0, Math.min(clientY - rect.top, rect.height));
+                activeSavedCoords = { x: parseFloat(((cx / rect.width) * 100 - 5).toFixed(1)), y: parseFloat(((cy / rect.height) * 100 - 4).toFixed(1)), width: 10, height: 8 };
+            } else {
+                activeSavedCoords = { x: parseFloat(((Math.min(dragStartCoords.x, dragEndCoords.x) / rect.width) * 100).toFixed(1)), y: parseFloat(((Math.min(dragStartCoords.y, dragEndCoords.y) / rect.height) * 100).toFixed(1)), width: parseFloat(((wPx / rect.width) * 100).toFixed(1)), height: parseFloat(((hPx / rect.height) * 100).toFixed(1)) };
+            }
+            isEditMode = false; openAddModal();
+        }
         
         function openAddModal() { 
             document.getElementById('add-error-msg').style.display = 'none'; 
