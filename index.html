@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>sdhs 쓰레기통 위치 지도</title>
+    <title>우리 학교 쓰레기통 동적 지도 서비스</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary-color: #2e7d32; --primary-light: #e8f5e9; --primary-dark: #1b5e20; --accent-color: #ff9100;
@@ -15,30 +16,47 @@
         header { margin-bottom: 15px; padding: 0 10px; }
         h2 { color: var(--primary-dark); margin: 5px 0; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
         .subtitle { color: #666; margin-top: 2px; font-size: 13px; font-weight: 500; }
+        
+        .sync-panel { background: #fff; max-width: 850px; margin: 0 auto 10px auto; padding: 10px 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center; }
+        .switch-label { font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .status-badge { font-size: 12px; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
+        .status-on { background: #e8f5e9; color: #2e7d32; }
+        .status-off { background: #eceff1; color: #455a64; }
+
         .guide-box { background-color: var(--white); border-left: 5px solid var(--primary-color); padding: 12px 16px; max-width: 850px; margin: 0 auto 12px auto; border-radius: 4px 10px 10px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); text-align: left; font-size: 13px; line-height: 1.6; word-break: keep-all; }
         .guide-title { font-weight: bold; color: var(--primary-dark); display: block; margin-bottom: 5px; font-size: 14px; }
+        
         .control-panel { max-width: 850px; margin: 0 auto 12px auto; display: flex; flex-direction: column; gap: 12px; background: var(--white); padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
         .btn-group { display: flex; gap: 8px; justify-content: center; width: 100%; }
         
         .floor-btn { flex: 1; max-width: 120px; padding: 10px 0; font-size: 13.5px; font-weight: 600; cursor: pointer; border-radius: 25px; border: 1.5px solid #ddd; background-color: var(--white); color: #555; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; }
         .floor-btn.active { background-color: var(--primary-color); border-color: var(--primary-color); color: var(--white); font-weight: bold; box-shadow: 0 3px 8px rgba(46, 125, 50, 0.2); }
         
-        .action-btn { width: 100%; max-width: 320px; padding: 11px 0; font-size: 13px; font-weight: bold; border-radius: 25px; border: none; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px; -webkit-tap-highlight-color: transparent; }
+        .action-btn { flex: 1; max-width: 200px; padding: 11px 0; font-size: 13px; font-weight: bold; border-radius: 25px; border: none; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px; -webkit-tap-highlight-color: transparent; }
+        .btn-select-delete { background-color: #cfd8dc; color: #37474f; }
+        .btn-select-delete.active { background-color: var(--danger-color); color: white; animation: pulse 1.5s infinite; }
         .btn-db-reset { background-color: #616161; color: white; }
+        
         #map-wrapper { position: relative; width: 100%; max-width: 850px; margin: 0 auto; border-radius: 12px; box-shadow: 0 0 0 3px var(--white), 0 5px 20px rgba(0,0,0,0.1); overflow: hidden; background-color: #eaeaea; cursor: crosshair; touch-action: none; }
         #map-image { width: 100%; height: auto; display: block; -webkit-user-drag: none; user-select: none; }
         
-        /* 🗺️ 마커 기본 스타일 (none 선택 시 기본 푸른빛 마커) */
         .zone-highlight { position: absolute; border: 2px dashed var(--zone-color); background-color: var(--zone-light); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; z-index: 5; -webkit-tap-highlight-color: transparent; }
         .zone-highlight:hover { background-color: var(--zone-hover); box-shadow: 0 0 10px rgba(41, 98, 255, 0.4); z-index: 10; border-style: solid; }
         
-        /* Spot 등급별 마커 색상 변경 */
         .zone-highlight.spot-green { border-color: var(--spot-green); background-color: rgba(46, 125, 50, 0.05); }
         .zone-highlight.spot-green:hover { background-color: rgba(46, 125, 50, 0.15); box-shadow: 0 0 10px rgba(46, 125, 50, 0.4); }
         .zone-highlight.spot-yellow { border-color: var(--spot-yellow); background-color: rgba(251, 192, 45, 0.05); }
         .zone-highlight.spot-yellow:hover { background-color: rgba(251, 192, 45, 0.15); box-shadow: 0 0 10px rgba(251, 192, 45, 0.4); }
         .zone-highlight.spot-red { border-color: var(--spot-red); background-color: rgba(211, 47, 47, 0.05); }
         .zone-highlight.spot-red:hover { background-color: rgba(211, 47, 47, 0.15); box-shadow: 0 0 10px rgba(211, 47, 47, 0.4); }
+
+        .zone-highlight.selected-for-delete { border: 3.5px solid var(--danger-color) !important; background-color: rgba(229, 57, 53, 0.3) !important; z-index: 15 !important; box-shadow: 0 0 12px var(--danger-color); }
 
         #drag-guide-box { position: absolute; border: 2px dashed var(--drag-color); background-color: rgba(0, 229, 255, 0.15); border-radius: 6px; display: none; z-index: 8; }
         
@@ -71,12 +89,17 @@
         .pill-spot-green { background-color: var(--spot-green); }
         .pill-spot-yellow { background-color: #f57f17; color: #fff; }
         .pill-spot-red { background-color: var(--spot-red); }
-        .pill-spot-none { background-color: var(--zone-color); }
 
         .modal-buttons { display: flex; gap: 8px; margin-top: 20px; }
         .modal-btn { flex: 1; padding: 11px; font-size: 14px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; text-align: center; }
         .btn-cancel { background-color: #eeeeee; color: #666; } .btn-save { background-color: var(--primary-color); color: var(--white); } .btn-delete { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
         .info-label { font-weight: 600; color: #555; display: inline-block; width: 75px; font-size: 13.5px; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(229, 57, 53, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0); }
+        }
 
         @media (min-width: 520px) {
             body { padding: 20px; }
@@ -84,25 +107,34 @@
             .control-panel { flex-direction: row; justify-content: space-between; align-items: center; padding: 15px; gap: 20px; }
             .btn-group { width: auto; gap: 12px; }
             .floor-btn { max-width: 140px; padding: 14px 28px; font-size: 16px; border-radius: 30px; }
-            .action-btn { width: auto; padding: 14px 24px; font-size: 14.5px; }
+            .action-btn { width: 160px; padding: 13px 0; font-size: 14px; }
             .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
             .checkbox-item.full-width { grid-column: span 2; }
-        }
-        @media (min-width: 850px) {
-            .modal-content { padding: 25px; max-width: 500px; }
         }
     </style>
 </head>
 <body>
     <header>
-        <h2>🧹 ㅅㅏㅇㄷㅏㅇㄱㅗ 쓰레기통 지도 📍</h2>
+        <h2>🧹 교내 쓰레기통 참여형 지도 📍</h2>
         <p class="subtitle">학급 특색 활동: 분리수거 및 무단 투기 실태 시각화</p>
     </header>
+
+    <div class="sync-panel">
+        <div class="switch-label">
+            🌐 실시간 전교생 지도 연동 
+            <span id="sync-status" class="status-badge status-off">오프라인 모드</span>
+        </div>
+        <label class="switch">
+            <input type="checkbox" id="sync-toggle" onchange="toggleSyncMode()">
+            <span class="slider"></span>
+        </label>
+    </div>
+
     <div class="guide-box">
         <span class="guide-title">💡 1초만에 마스터하는 지도 사용법!</span>
-        1. 원하는 층수 버튼을 누르고, 지도 도면 위를 <strong>손가락이나 마우스로 드래그(네모 그리기)</strong> 하세요.<br>
-        2. 등록 창이 뜨면 구체적인 <strong>장소 이름</strong>을 적고, 배치된 <strong>쓰레기통 종류</strong>와 <strong>분리수거 등급(Spot)</strong>을 설정해 줍니다.<br>
-        3. 등급 설정을 원하지 않으면 <strong>'선택 안 함'</strong>으로 일반 마커를 남길 수 있습니다.
+        1. 원하는 층수 버튼을 누르고, 지도 도면 위를 <strong>드래그</strong> 하세요.<br>
+        2. 등록 창이 뜨면 구체적인 <strong>장소 이름</strong>, <strong>쓰레기통 종류</strong>와 <strong>Spot 등급</strong>을 설정해 줍니다.<br>
+        3. 여러 구역을 한 번에 지우고 싶다면 <strong>[☑️ 선택 구역 삭제]</strong>를 눌러 일괄 삭제를 진행하세요!
     </div>
     <div class="control-panel">
         <div class="btn-group">
@@ -111,7 +143,8 @@
             <button class="floor-btn" id="btn-f3" onclick="changeFloor('3층')">3층</button>
             <button class="floor-btn" id="btn-f4" onclick="changeFloor('4층')">4층</button>
         </div>
-        <div class="btn-group">
+        <div class="btn-group" style="flex: 1; justify-content: flex-end; max-width: 400px;">
+            <button class="action-btn btn-select-delete" id="btn-bulk-delete-mode" onclick="toggleBulkDeleteMode()">☑️ 선택 구역 삭제</button>
             <button class="action-btn btn-db-reset" onclick="resetLocalStorageSecurely()">🔄 지도 전체 초기화</button>
         </div>
     </div>
@@ -179,20 +212,125 @@
     </div>
     
     <script>
+        // ⚠️ 아래 두 줄(195~196번 줄)을 본인 Supabase 정보로 수정해야 합니다!
+        const SUPABASE_URL = "https://aswipaalqeiforwdgltg.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_41VovqaOxhgqDpXBUamLxA_8mscN_Xq";
+        
+        let supabaseClient = null;
+        if(SUPABASE_URL !== "YOUR_SUPABASE_URL") {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
         let currentFloor = "1층", currentSelectedMarkerId = null, isDragging = false, isEditMode = false;
         let dragStartCoords = { x: 0, y: 0 }, dragEndCoords = { x: 0, y: 0 }, activeSavedCoords = { x: 0, y: 0, width: 0, height: 0 }, trashBins = [];
+        let isOnlineMode = false, supabaseSubscription = null;
         const MASTER_PASSWORD = "0701";
 
-        window.onload = function() { initInteractionEvents(); loadFromLocalStorage(); }
-        function autoSaveToLocalStorage() { localStorage.setItem('school_trash_data_permanent', JSON.stringify(trashBins)); }
-        function loadFromLocalStorage() { const savedData = localStorage.getItem('school_trash_data_permanent'); if (savedData) { trashBins = JSON.parse(savedData); renderMarkers(); } }
+        let isBulkDeleteMode = false;
+        let selectedMarkerIds = [];
+
+        window.onload = function() { 
+            initInteractionEvents(); 
+            const savedSync = localStorage.getItem('sync_mode_enabled');
+            if (savedSync === 'true' && supabaseClient) {
+                document.getElementById('sync-toggle').checked = true;
+                toggleSyncMode();
+            } else {
+                loadFromLocalStorage(); 
+            }
+        }
+
+        async function toggleSyncMode() {
+            const toggle = document.getElementById('sync-toggle');
+            const status = document.getElementById('sync-status');
+            if(!supabaseClient) {
+                alert("Supabase API 키가 설정되지 않아 연동 모드를 켤 수 없습니다. 소스코드를 확인해주세요!");
+                toggle.checked = false; return;
+            }
+            isOnlineMode = toggle.checked;
+            localStorage.setItem('sync_mode_enabled', isOnlineMode);
+
+            if (isOnlineMode) {
+                status.innerText = "온라인 실시간 연동 중"; status.className = "status-badge status-on";
+                await fetchFromSupabase(); subscribeToSupabase();
+            } else {
+                status.innerText = "오프라인 모드"; status.className = "status-badge status-off";
+                if(supabaseSubscription) supabaseClient.channel('schema-db-changes').unsubscribe();
+                loadFromLocalStorage();
+            }
+            if(isBulkDeleteMode) toggleBulkDeleteMode();
+        }
+
+        async function fetchFromSupabase() {
+            if (!isOnlineMode) return;
+            const { data, error } = await supabaseClient.from('school_trash').select('*');
+            if (!error && data) {
+                trashBins = data.map(item => ({
+                    id: item.id, floorName: item.floor_name, x: item.x, y: item.y, width: item.width, height: item.height,
+                    location: item.location, types: item.types, desc: item.description, isLocked: item.is_locked, spotLevel: item.spot_level
+                }));
+                renderMarkers();
+            }
+        }
+
+        function subscribeToSupabase() {
+            supabaseSubscription = supabaseClient.channel('schema-db-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'school_trash' }, () => { fetchFromSupabase(); })
+            .subscribe();
+        }
+
+        function autoSaveToLocalStorage() { if(!isOnlineMode) localStorage.setItem('school_trash_data_permanent', JSON.stringify(trashBins)); }
+        function loadFromLocalStorage() { const savedData = localStorage.getItem('school_trash_data_permanent'); trashBins = savedData ? JSON.parse(savedData) : []; renderMarkers(); }
         
-        function resetLocalStorageSecurely() {
+        async function resetLocalStorageSecurely() {
             const inputPw = prompt("🔒 지도 전체 초기화 잠금\n통합 비밀번호를 입력해야 모든 데이터가 리셋됩니다:");
             if (inputPw === null) return;
-            if (inputPw === MASTER_PASSWORD) {
-                if (confirm("정말로 모든 층의 수거 구역 데이터를 공장초기화 하시겠습니까?")) { localStorage.removeItem('school_trash_data_permanent'); trashBins = []; renderMarkers(); alert("모든 데이터가 깨끗하게 리셋되었습니다."); }
-            } else { alert("❌ 비밀번호가 올바르지 않습니다."); }
+            if (inputPw !== MASTER_PASSWORD) { alert("❌ 비밀번호가 올바르지 않습니다."); return; }
+            
+            if (confirm("정말로 모든 데이터를 공장초기화 하시겠습니까?")) {
+                if (isOnlineMode) {
+                    await supabaseClient.from('school_trash').delete().neq('id', 0);
+                } else {
+                    localStorage.removeItem('school_trash_data_permanent'); trashBins = []; renderMarkers();
+                }
+                if(isBulkDeleteMode) toggleBulkDeleteMode();
+                alert("모든 데이터가 깨끗하게 리셋되었습니다.");
+            }
+        }
+
+        function toggleBulkDeleteMode() {
+            const btn = document.getElementById('btn-bulk-delete-mode');
+            isBulkDeleteMode = !isBulkDeleteMode;
+            selectedMarkerIds = [];
+
+            if (isBulkDeleteMode) {
+                btn.classList.add('active');
+                btn.innerText = "🗑️ 0개 구역 삭제하기";
+                alert("체크 삭제 모드가 켜졌습니다.\n지도에서 한꺼번에 지우고 싶은 구역(마커)들을 터치해 선택하세요!");
+            } else {
+                btn.classList.remove('active');
+                btn.innerText = "☑️ 선택 구역 삭제";
+            }
+            renderMarkers();
+        }
+
+        async function executionBulkDelete() {
+            if(selectedMarkerIds.length === 0) { alert("선택된 구역이 없습니다."); return; }
+            
+            const pw = prompt(`🔒 선택 삭제 승인\n선택한 ${selectedMarkerIds.length}개의 구역을 일괄 삭제하려면 비밀번호를 입력하세요:`);
+            if (pw !== MASTER_PASSWORD) { alert("❌ 비밀번호가 올바르지 않습니다. 작업이 취소됩니다."); return; }
+
+            if (confirm(`정말로 선택한 ${selectedMarkerIds.length}개의 수거 구역을 한꺼번에 삭제할까요?`)) {
+                if (isOnlineMode) {
+                    await supabaseClient.from('school_trash').delete().in('id', selectedMarkerIds);
+                } else {
+                    trashBins = trashBins.filter(bin => !selectedMarkerIds.includes(bin.id));
+                    autoSaveToLocalStorage();
+                    renderMarkers();
+                }
+                alert("선택한 구역들이 깨끗하게 일괄 삭제되었습니다.");
+                toggleBulkDeleteMode();
+            }
         }
         
         function changeFloor(floor) {
@@ -209,13 +347,34 @@
             const container = document.getElementById('marker-container'); container.innerHTML = "";
             trashBins.filter(bin => bin.floorName === currentFloor).forEach(bin => {
                 const zone = document.createElement('div'); 
-                // spotLevel 값이 none이거나 없으면 클래스를 추가하지 않아 기본 파란색 적용
                 const level = bin.spotLevel || 'none';
-                zone.className = `zone-highlight ${level !== 'none' ? 'spot-' + level : ''}`;
+                
+                const isSelected = selectedMarkerIds.includes(bin.id);
+                zone.className = `zone-highlight ${level !== 'none' ? 'spot-' + level : ''} ${isSelected ? 'selected-for-delete' : ''}`;
                 zone.style.left = bin.x + "%"; zone.style.top = bin.y + "%"; zone.style.width = bin.width + "%"; zone.style.height = bin.height + "%";
                 
-                const openModalHandler = (e) => { e.stopPropagation(); e.preventDefault(); openViewModal(bin.id); };
-                zone.addEventListener('click', openModalHandler); zone.addEventListener('touchend', openModalHandler);
+                const clickHandler = (e) => { 
+                    e.stopPropagation(); e.preventDefault(); 
+                    if(isBulkDeleteMode) {
+                        if(selectedMarkerIds.includes(bin.id)) {
+                            selectedMarkerIds = selectedMarkerIds.filter(id => id !== bin.id);
+                        } else {
+                            selectedMarkerIds.push(bin.id);
+                        }
+                        const btn = document.getElementById('btn-bulk-delete-mode');
+                        if(selectedMarkerIds.length > 0) {
+                            btn.innerText = `🗑️ ${selectedMarkerIds.length}개 구역 삭제하기`;
+                            btn.onclick = executionBulkDelete;
+                        } else {
+                            btn.innerText = "🗑️ 0개 구역 삭제하기";
+                            btn.onclick = toggleBulkDeleteMode;
+                        }
+                        renderMarkers();
+                    } else {
+                        openViewModal(bin.id); 
+                    }
+                };
+                zone.addEventListener('click', clickHandler); zone.addEventListener('touchend', clickHandler);
                 container.appendChild(zone);
             });
         }
@@ -231,7 +390,8 @@
         }
         
         function handleDragStart(clientX, clientY, target) {
-            if (target.closest('.zone-highlight')) return; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
+            if (isBulkDeleteMode || target.closest('.zone-highlight')) return; 
+            const rect = document.getElementById('map-wrapper').getBoundingClientRect();
             isDragging = true; dragStartCoords.x = clientX - rect.left; dragStartCoords.y = clientY - rect.top;
             dragEndCoords.x = dragStartCoords.x; dragEndCoords.y = dragStartCoords.y;
             const guide = document.getElementById('drag-guide-box'); guide.style.left = dragStartCoords.x + "px"; guide.style.top = dragStartCoords.y + "px"; guide.style.width = "0px"; guide.style.height = "0px"; guide.style.display = "block";
@@ -254,8 +414,7 @@
             } else {
                 activeSavedCoords = { x: parseFloat(((Math.min(dragStartCoords.x, dragEndCoords.x) / rect.width) * 100).toFixed(1)), y: parseFloat(((Math.min(dragStartCoords.y, dragEndCoords.y) / rect.height) * 100).toFixed(1)), width: parseFloat(((wPx / rect.width) * 100).toFixed(1)), height: parseFloat(((hPx / rect.height) * 100).toFixed(1)) };
             }
-            isEditMode = false;
-            openAddModal();
+            isEditMode = false; openAddModal();
         }
         
         function openAddModal() { 
@@ -266,28 +425,39 @@
             } else {
                 document.getElementById('add-modal-title').innerText = "📍 새 쓰레기 수거 구역 등록";
                 document.getElementById('btn-save-main').innerText = "구역 저장";
-                document.getElementById('input-location').value = ""; 
-                document.getElementById('input-desc').value = ""; 
-                document.getElementById('input-spot-level').value = "none";
-                document.getElementById('input-is-locked').checked = false;
+                document.getElementById('input-location').value = ""; document.getElementById('input-desc').value = ""; 
+                document.getElementById('input-spot-level').value = "none"; document.getElementById('input-is-locked').checked = false;
                 document.querySelectorAll('input[name="bin-types"]').forEach(cb => cb.checked = false);
             }
             document.getElementById('add-modal').classList.add('show'); 
         }
         function closeAddModal() { document.getElementById('add-modal').classList.remove('show'); isEditMode = false; }
         
-        function saveMarkerData() {
+        async function saveMarkerData() {
             const loc = document.getElementById('input-location').value.trim(), desc = document.getElementById('input-desc').value.trim(), checked = document.querySelectorAll('input[name="bin-types"]:checked'), types = Array.from(checked).map(cb => cb.value);
-            const isLocked = document.getElementById('input-is-locked').checked;
-            const spotLevel = document.getElementById('input-spot-level').value;
+            const isLocked = document.getElementById('input-is-locked').checked; const spotLevel = document.getElementById('input-spot-level').value;
             
             if (!loc || types.length === 0) { const err = document.getElementById('add-error-msg'); err.innerText = "이름과 종류를 입력하세요."; err.style.display = 'block'; return; }
             
             if (isEditMode) {
                 const target = trashBins.find(bin => bin.id === currentSelectedMarkerId);
-                if (target) { target.location = loc; target.types = types; target.desc = desc || "세부 기록 없음."; target.isLocked = isLocked; target.spotLevel = spotLevel; }
+                if (target) { 
+                    target.location = loc; target.types = types; target.desc = desc || "세부 기록 없음."; target.isLocked = isLocked; target.spotLevel = spotLevel; 
+                    if (isOnlineMode) {
+                        await supabaseClient.from('school_trash').update({
+                            location: loc, types: types, description: target.desc, is_locked: isLocked, spot_level: spotLevel
+                        }).eq('id', currentSelectedMarkerId);
+                    }
+                }
             } else {
-                trashBins.push({ id: Date.now(), floorName: currentFloor, x: activeSavedCoords.x, y: activeSavedCoords.y, width: activeSavedCoords.width, height: activeSavedCoords.height, location: loc, types: types, desc: desc || "세부 기록 없음.", isLocked: isLocked, spotLevel: spotLevel });
+                const newId = Date.now();
+                const newBin = { id: newId, floorName: currentFloor, x: activeSavedCoords.x, y: activeSavedCoords.y, width: activeSavedCoords.width, height: activeSavedCoords.height, location: loc, types: types, desc: desc || "세부 기록 없음.", isLocked: isLocked, spotLevel: spotLevel };
+                trashBins.push(newBin);
+                if (isOnlineMode) {
+                    await supabaseClient.from('school_trash').insert([{
+                        id: newId, floor_name: currentFloor, x: activeSavedCoords.x, y: activeSavedCoords.y, width: activeSavedCoords.width, height: activeSavedCoords.height, location: loc, types: types, description: newBin.desc, is_locked: isLocked, spot_level: spotLevel
+                    }]);
+                }
             }
             closeAddModal(); autoSaveToLocalStorage(); renderMarkers();
         }
@@ -305,8 +475,7 @@
 
                 const spotLevel = target.spotLevel || 'none';
                 if (spotLevel !== 'none') {
-                    const spotPill = document.createElement('span');
-                    spotPill.className = `info-pill pill-spot-${spotLevel}`;
+                    const spotPill = document.createElement('span'); spotPill.className = `info-pill pill-spot-${spotLevel}`;
                     if (spotLevel === 'green') spotPill.innerText = "🟢 Green Spot";
                     else if (spotLevel === 'red') spotPill.innerText = "🔴 Red Spot";
                     else spotPill.innerText = "🟡 Yellow Spot";
@@ -319,13 +488,18 @@
                     container.appendChild(pill);
                 });
                 
-                document.getElementById('delete-btn').onclick = function() {
+                document.getElementById('delete-btn').onclick = async function() {
                     if (target.isLocked) {
                         const pw = prompt("🔒 이 구역은 보안 잠금이 설정되어 있습니다.\n비밀번호를 입력하세요:");
                         if (pw !== MASTER_PASSWORD) { alert("❌ 비밀번호가 올바르지 않습니다. 삭제가 거부되었습니다."); return; }
                     }
                     if (confirm("정말로 이 구역을 삭제하시겠습니까?")) {
-                        trashBins = trashBins.filter(bin => bin.id !== id); closeViewModal(); autoSaveToLocalStorage(); renderMarkers();
+                        if (isOnlineMode) {
+                            await supabaseClient.from('school_trash').delete().eq('id', id);
+                        } else {
+                            trashBins = trashBins.filter(bin => bin.id !== id); autoSaveToLocalStorage(); renderMarkers();
+                        }
+                        closeViewModal();
                     }
                 };
                 document.getElementById('view-modal').classList.add('show');
@@ -340,7 +514,6 @@
                     const pw = prompt("🔒 이 구역은 보안 잠금이 설정되어 있습니다.\n수정하려면 비밀번호를 입력하세요:");
                     if (pw !== MASTER_PASSWORD) { alert("❌ 비밀번호가 올바르지 않습니다. 수정이 거부되었습니다."); return; }
                 }
-                
                 isEditMode = true; closeViewModal();
                 document.getElementById('input-location').value = target.location;
                 document.getElementById('input-desc').value = target.desc === "세부 기록 없음." ? "" : target.desc;
@@ -352,4 +525,4 @@
         }
     </script>
 </body>
-</html
+</html>
