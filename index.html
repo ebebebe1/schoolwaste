@@ -410,17 +410,39 @@
         }
         
         function handleDragEnd(clientX, clientY) {
-            if (!isDragging) return; isDragging = false; const rect = document.getElementById('map-wrapper').getBoundingClientRect();
-            document.getElementById('drag-guide-box').style.display = "none";
-            const wPx = Math.abs(dragEndCoords.x - dragStartCoords.x), hPx = Math.abs(dragEndCoords.y - dragStartCoords.y);
-            if (wPx < 10 || hPx < 10) {
-                let cx = Math.max(0, Math.min(clientX - rect.left, rect.width)), cy = Math.max(0, Math.min(clientY - rect.top, rect.height));
-                activeSavedCoords = { x: parseFloat(((cx / rect.width) * 100 - 5).toFixed(1)), y: parseFloat(((cy / rect.height) * 100 - 4).toFixed(1)), width: 10, height: 8 };
-            } else {
-                activeSavedCoords = { x: parseFloat(((Math.min(dragStartCoords.x, dragEndCoords.x) / rect.width) * 100).toFixed(1)), y: parseFloat(((Math.min(dragStartCoords.y, dragEndCoords.y) / rect.height) * 100).toFixed(1)), width: parseFloat(((wPx / rect.width) * 100).toFixed(1)), height: parseFloat(((hPx / rect.height) * 100).toFixed(1)) };
-            }
-            isEditMode = false; openAddModal();
-        }
+    if (!isDragging) return; isDragging = false; 
+    
+    const wrapper = document.getElementById('map-wrapper');
+    const rect = wrapper.getBoundingClientRect();
+    const mapImg = document.getElementById('map-image');
+    
+    // 💡 이미지의 현재 화면상 실제 렌더링된 크기를 구합니다.
+    const currentImgWidth = mapImg.clientWidth;
+    const currentImgHeight = mapImg.clientHeight;
+    
+    document.getElementById('drag-guide-box').style.display = "none";
+    const wPx = Math.abs(dragEndCoords.x - dragStartCoords.x), hPx = Math.abs(dragEndCoords.y - dragStartCoords.y);
+    
+    // 이미지 영역 기준 맞춤 계산
+    if (wPx < 10 || hPx < 10) {
+        let cx = Math.max(0, Math.min(clientX - rect.left, currentImgWidth));
+        let cy = Math.max(0, Math.min(clientY - rect.top, currentImgHeight));
+        activeSavedCoords = { 
+            x: parseFloat(((cx / currentImgWidth) * 100 - 5).toFixed(1)), 
+            y: parseFloat(((cy / currentImgHeight) * 100 - 4).toFixed(1)), 
+            width: 10, 
+            height: 8 
+        };
+    } else {
+        activeSavedCoords = { 
+            x: parseFloat(((Math.min(dragStartCoords.x, dragEndCoords.x) / currentImgWidth) * 100).toFixed(1)), 
+            y: parseFloat(((Math.min(dragStartCoords.y, dragEndCoords.y) / currentImgHeight) * 100).toFixed(1)), 
+            width: parseFloat(((wPx / currentImgWidth) * 100).toFixed(1)), 
+            height: parseFloat(((hPx / currentImgHeight) * 100).toFixed(1)) 
+        };
+    }
+    isEditMode = false; openAddModal();
+}
         
         function openAddModal() { 
             document.getElementById('add-error-msg').style.display = 'none'; 
